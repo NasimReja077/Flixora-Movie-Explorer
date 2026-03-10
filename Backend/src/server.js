@@ -1,8 +1,10 @@
-import dotenv from "dotenv";
+// dotenv.config();
+import 'dotenv/config'; 
+// import dotenv from "dotenv";
 import app from "./app.js";
 import connectDatabase from "./config/database.js";
+import "./config/redis.config.js";
 
-dotenv.config();
 
 // Connect to database
 connectDatabase();
