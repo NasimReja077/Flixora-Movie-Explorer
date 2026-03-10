@@ -1,13 +1,32 @@
 import express from "express";
+import helmet from "helmet";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import { apiLimiter } from './middlewares/rateLimitMiddleware';
+import errorHandler from './middlewares/errorMiddleware'
 
 const app = express();
 
-// middlewares
-app.use(cors());
-app.use(express.json());
+// Security headers
+app.use(helmet());
+
+
+// CORS configuration
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "http://localhost:5173",
+  credentials: true
+}));
+
+// Body parser middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Cookie parser
 app.use(cookieParser());
+
+
+// Rate Limiting
+app.use('/api', apiLimiter);
 
 // routes
 
@@ -15,5 +34,7 @@ app.use(cookieParser());
 app.get("/", (req, res) => {
   res.send("Flixora API running...");
 });
+
+app.use(errorHandler);
 
 export default app;
