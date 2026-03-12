@@ -29,7 +29,7 @@ const protect = async (req, res, next) => {
     // Check if token is blacklisted in Redis
     const isBlacklisted = await redis.get(`blacklist:${token}`);
     if (isBlacklisted) {
-      return next(new ApiError(401, 'Invalid token... Token is no longer valid. Please log in again'));
+      return next(new ApiError(401, 'Invalid token... Token is no longer valid. Session expired or logged out. Please log in again.'));
     }
 
     // Verify token
@@ -39,7 +39,7 @@ const protect = async (req, res, next) => {
     const user = await User.findById(decoded.id).select('-password');
 
     if (!user) {
-      return next(new ApiError(401, 'Invalid... User no longer exists'));
+      return next(new ApiError(401, 'Invalid...,The User account associated with this token no longer exists.'));
     }
 
     // Check if user is banned
@@ -54,7 +54,7 @@ const protect = async (req, res, next) => {
     if (error.name === 'TokenExpiredError') {
       return next(new ApiError(401, 'Token has expired'));
     }
-    return next(new ApiError(401, 'Invalid token. Please log in again'));
+    return next(new ApiError(401, 'Invalid authentication token. Please log in again'));
   }
 };
 
