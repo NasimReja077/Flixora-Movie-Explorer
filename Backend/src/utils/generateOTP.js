@@ -4,8 +4,16 @@ const generateOTP = () => {
   return crypto.randomInt(100000, 999999).toString();
 };
 
-// const generateResetToken = () => {
-//   return crypto.randomBytes(32).toString('hex');
-// };
+const generateResetToken = () => {
+  return crypto.randomBytes(32).toString('hex');
+};
 
-module.exports = { generateOTP };
+const generateResetTokenExpire = () => {
+  return new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+}
+
+export default { 
+  generateOTP, 
+  generateResetToken, 
+  generateResetTokenExpire
+};
