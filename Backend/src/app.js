@@ -1,10 +1,12 @@
 import express from "express";
 import helmet from "helmet";
 import cors from "cors";
-import cookieParser from "cookie-parser";
-import { apiLimiter } from './middlewares/rateLimitMiddleware';
-import errorHandler from './middlewares/errorMiddleware'
 
+import cookieParser from "cookie-parser";
+import { apiLimiter } from './middlewares/rateLimitMiddleware.js';
+import errorHandler from './middlewares/errorMiddleware.js';
+
+import authRoutes from './routes/auth.routes.js';
 const app = express();
 
 // Security headers
@@ -28,7 +30,8 @@ app.use(cookieParser());
 // Rate Limiting
 app.use('/api', apiLimiter);
 
-// routes
+// Mount routes
+app.use('/api/auth', authRoutes);
 
 // test route
 app.get("/", (req, res) => {
