@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
-import User from '../models/User.model';
-import redis from '../config/redis.config';
-import ApiError from '../utils/ApiError';
+import {User} from '../models/User.model.js';
+import redis from '../config/redis.config.js';
+import ApiError from '../utils/ApiError.js';
 
 const protect = async (req, res, next) => {
   try {
