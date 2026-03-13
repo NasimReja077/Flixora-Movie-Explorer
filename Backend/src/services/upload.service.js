@@ -3,7 +3,7 @@
 import { upload } from '../middlewares/uploadMiddleware.js';
 import cloudinary, { CLOUDINARY_FOLDERS } from '../config/cloudinary.config.js';
 import fs from 'fs';
-import { ApiError } from '../utils/ApiError.js';
+import ApiError from '../utils/ApiError.js';
 
 export const uploadAvatar = upload.single('avatars');
 export const uploadMovieThumbnail = upload.single('thumbnails');
