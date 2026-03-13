@@ -86,6 +86,18 @@ export const verifyOTPValidator = [
     .withMessage('OTP must contain only numbers'),
 ];
 
+export const resendOTPValidator = [
+  body('email')
+    .trim()
+    .notEmpty()
+    .withMessage('Email is required')
+    .bail()
+    .isEmail()
+    .withMessage('Please provide a valid email address')
+    .normalizeEmail()
+    .escape(),
+];
+
 export const forgotPasswordValidator = [
   body('email')
     .trim()
@@ -129,6 +141,7 @@ export default {
   signupValidator,
   loginValidator,
   verifyOTPValidator,
+  resendOTPValidator,
   forgotPasswordValidator,
   resetPasswordValidator,
 };
