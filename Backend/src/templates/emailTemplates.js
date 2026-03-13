@@ -18,11 +18,11 @@ export const VERIFICATION_EMAIL_TEMPLATE = `
           <h1>🎬 Welcome to Flixora!</h1>
         </div>
         <div class="content">
-          <h2>Hello ${username}! 👋</h2>
+          <h2>Hello {username}! 👋</h2>
           <p>Thank you for signing up! To complete your registration, please verify your email address using the OTP below:</p>
           <div class="otp-box">
             <p style="margin: 0; font-size: 14px; color: #666;">Your OTP Code:</p>
-            <p class="otp-code">${otp}</p>
+            <p class="otp-code">{otp}</p>
             <p style="margin: 0; font-size: 12px; color: #888;">Valid for 10 minutes</p>
           </div>
           <p>If you didn't create this account, please ignore this email.</p>
@@ -55,10 +55,10 @@ export const WELCOME_EMAIL_TEMPLATE = `
           <h1>🎉 Welcome to Flixora!</h1>
         </div>
         <div class="content">
-          <h2>Hello ${username}! 👋</h2>
+          <h2>Hello {username}! 👋</h2>
           <p>Your email has been successfully verified! You're now part of the Flixora community.</p>
           <p>Discover thousands of movies and TV shows, save your favorites, and enjoy personalized recommendations.</p>
-          <a href="${process.env.FRONTEND_URL}" class="button">Start Exploring</a>
+          <a href="{frontendUrl}" class="button">Start Exploring</a>
           <p>Happy watching! 🍿</p>
         </div>
         <div class="footer">
@@ -88,9 +88,9 @@ export const PASSWORD_RESET_REQUEST_TEMPLATE = `
           <h1>🔐 Password Reset Request</h1>
         </div>
         <div class="content">
-          <h2>Hello ${username}!</h2>
+          <h2>Hello {username}!</h2>
           <p>We received a request to reset your password. Click the button below to create a new password:</p>
-          <a href="${resetUrl}" class="button">Reset Password</a>
+          <a href="{resetUrl}" class="button">Reset Password</a>
           <p style="color: #888; font-size: 12px;">This link will expire in 1 hour.</p>
           <p>If you didn't request this, please ignore this email.</p>
         </div>
@@ -120,7 +120,7 @@ export const PASSWORD_RESET_SUCCESS_TEMPLATE = `
           <h1>✅ Password Reset Successful</h1>
         </div>
         <div class="content">
-          <h2>Hello ${username}!</h2>
+          <h2>Hello {username}!</h2>
           <p>Your password has been successfully reset.</p>
           <p>You can now log in with your new password.</p>
           <p>If you didn't make this change, please contact our support immediately.</p>

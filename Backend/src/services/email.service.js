@@ -1,7 +1,7 @@
-// src/services / emailService.js
+// src/services / email.service.js
 
 import { defaultEmailOptions, transporter } from "../config/mailer.config.js";
-import { ApiError } from "../utils/ApiError.js";
+import ApiError from "../utils/ApiError.js";
 import { 
      PASSWORD_RESET_REQUEST_TEMPLATE,
       PASSWORD_RESET_SUCCESS_TEMPLATE, 
@@ -29,7 +29,7 @@ const sendEmail = async (to, subject, htmlContent) =>{
 
 // 1> Email Verification with OTP
 
-export const sendVerificationEmail = async (email,username, otp) => {
+export const sendOTPEmail = async (email, username, otp) => {
      const htmlContent = VERIFICATION_EMAIL_TEMPLATE
           .replace("{username}", username)
           .replace("{otp}", otp);
@@ -38,26 +38,26 @@ export const sendVerificationEmail = async (email,username, otp) => {
 
 // 2> Welcome Email
 
-export const sendWelcomeEmail = async (username, email) => {
+export const sendWelcomeEmail = async (email, username) => {
      const htmlContent = WELCOME_EMAIL_TEMPLATE
           .replace("{username}", username)
           .replace("{frontendUrl}", process.env.FRONTEND_URL);
-     return sendEmail(email, 'Welcome to Our Platform! &#x1F973;', htmlContent);
+     return sendEmail(email, 'Welcome to Our Platform! 🥳', htmlContent);
 };
 
 // 3> Password Reset Request
 
-export const sendPasswordResetEmail = async (username, email, resetUrl) => {
+export const sendPasswordResetEmail = async (email, resetUrl, username) => {
      const htmlContent = PASSWORD_RESET_REQUEST_TEMPLATE
-          .replace("{name}", username)
+          .replace("{username}", username)
           .replace("{resetUrl}", resetUrl);
      return sendEmail(email, "Password Reset Request 🔑", htmlContent);
 };
 
 // 4> Password Reset Success
 
-export const sendResetSuccessEmail = async (email, username) => {
+export const sendPasswordResetConfirmation = async (email, username) => {
      const htmlContent = PASSWORD_RESET_SUCCESS_TEMPLATE
           .replace('{username}', username);
      return sendEmail(email, "Password Reset Successful 🎉", htmlContent);
-}
+};
