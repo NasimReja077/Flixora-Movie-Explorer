@@ -1,9 +1,9 @@
-import User from "../models/User.model";
-import redis from "../config/redis.config";
-import ApiError from "../utils/ApiError";
-import ApiResponse from "../utils/ApiResponse";
-import { sendTokenResponse } from "../utils/jwt";
-import { generateOTP, generateResetToken, generateResetTokenExpire } from "../utils/generateOTP";
+import { User } from "../models/User.model.js";
+import redis from "../config/redis.config.js";
+import ApiError from "../utils/ApiError.js";
+import ApiResponse from "../utils/ApiResponse.js";
+import { sendTokenResponse } from "../utils/jwt.js";
+import { generateOTP, generateResetToken, generateResetTokenExpire } from "../utils/generateOTP.js";
 
 import {
   imageUploadToCloudinary,
@@ -14,13 +14,15 @@ import {
   sendWelcomeEmail,
   sendPasswordResetEmail,
   sendPasswordResetConfirmation,
-} from "../services/email.service";
+} from "../services/email.service.js";
+
+import jwt from "jsonwebtoken";
 
 // @desc    Register user
 // @route   POST /api/auth/signup
 // @access  Public
 
-const signup = async (req, res, next) => {
+export const signup = async (req, res, next) => {
   try {
     const { username, email, password } = req.body;
 
@@ -61,19 +63,26 @@ const signup = async (req, res, next) => {
     });
 
     // Send OTP email
-    await sendOTPEmail(user.email, otp, user.username);
+    await sendOTPEmail(user.email, user.username, otp);
 
-    const token = sendTokenResponse(user._id, res);
+    // const token = sendTokenResponse(user,201,res);
 
-    res
-      .status(201)
-      .json(
-        new ApiResponse(
-          201,
-          { email: user.email, token },
-          "Registration successful! Please verify your email with OTP",
-        ),
-      );
+    // res.status(201)
+    //   .json(
+    //     new ApiResponse(
+    //       201,
+    //       { email: user.email, token },
+    //       "Registration successful! Please verify your email with OTP",
+    //     ),
+    //   );
+
+    // Send token response
+    sendTokenResponse(
+      user,
+      201,
+      res,
+      "Registration successful! Please verify your email with OTP"
+    );
   } catch (error) {
     next(error);
   }
@@ -82,7 +91,7 @@ const signup = async (req, res, next) => {
 // @desc    Verify OTP
 // @route   POST /api/auth/verify-otp
 // @access  Public
-const verifyOTP = async (req, res, next) => {
+export const verifyOTP = async (req, res, next) => {
   try {
     const { email, otp } = req.body;
 
@@ -137,7 +146,7 @@ const verifyOTP = async (req, res, next) => {
 // @desc    Resend OTP
 // @route   POST /api/auth/resend-otp
 // @access  Public
-const resendOTP = async (req, res, next) => {
+export const resendOTP = async (req, res, next) => {
   try {
     const { email } = req.body;
 
@@ -160,7 +169,7 @@ const resendOTP = async (req, res, next) => {
     await user.save();
 
     // Send OTP email
-    await sendOTPEmail(email, otp, user.username);
+    await sendOTPEmail(email, user.username, otp);
 
     res.status(200).json(new ApiResponse(200, null, 'OTP sent successfully'));
   } catch (error) {
@@ -171,7 +180,7 @@ const resendOTP = async (req, res, next) => {
 // @desc    Login user
 // @route   POST /api/auth/login
 // @access  Public
-const login = async (req, res, next) => {
+export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -213,28 +222,30 @@ const login = async (req, res, next) => {
 // @desc    Logout user
 // @route   POST /api/auth/logout
 // @access  Private
-const logout = async (req, res, next) => {
+export const logout = async (req, res, next) => {
   try {
-
     const token = req.token;
 
     if (!token) {
       return res.status(200).json(new ApiResponse(200, null, 'Already logged out'));
     }
 
-    // Add token to Redis blacklist
-    const decoded = sendTokenResponse.decoded(token);
+    // Decode safely — no need to verify again (protect middleware already did)
+    const decoded = jwt.decode(token);
 
-    if (decoded && decoded.exp) {
+    if (decoded?.exp) {
       const currentTime = Math.floor(Date.now() / 1000);
-      const expiresIn = decoded.exp - currentTime;
+      const ttlSeconds = decoded.exp - currentTime;
 
-      // 2. Add to Redis blacklist only if the token hasn't already naturally expired
-      if (expiresIn > 0) {
-        await redis.setex(`blacklist:${token}`,'true' ,'EXP-',expiresIn);
+      if (ttlSeconds > 0) {
+        // Correct ioredis syntax
+        await redis.set(`blacklist:${token}`, 'true', 'EX', ttlSeconds);
+        // OR this also works:
+        // await redis.setex(`blacklist:${token}`, ttlSeconds, 'true');
       }
     }
 
+    // Clear cookie
     res.cookie('token', '', {
       expires: new Date(0),
       httpOnly: true,
@@ -248,10 +259,11 @@ const logout = async (req, res, next) => {
   }
 };
 
+
 // @desc    Forgot password
 // @route   POST /api/auth/forgot-password
 // @access  Public
-const forgotPassword = async (req, res, next) => {
+export const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
 
@@ -290,7 +302,7 @@ const forgotPassword = async (req, res, next) => {
 // @desc    Reset password
 // @route   POST /api/auth/reset-password/:token
 // @access  Public
-const resetPassword = async (req, res, next) => {
+export const resetPassword = async (req, res, next) => {
   try {
     const { token } = req.params;
     const { password } = req.body;
@@ -328,7 +340,7 @@ const resetPassword = async (req, res, next) => {
 // @desc    Get current user
 // @route   GET /api/auth/me
 // @access  Private
-const getMe = async (req, res, next) => {
+export const getMe = async (req, res, next) => {
   try {
     
     const user = req.user;
@@ -342,15 +354,4 @@ const getMe = async (req, res, next) => {
   } catch (error) {
     next(error);
   }
-};
-
-export default {
-  signup,
-  verifyOTP,
-  resendOTP,
-  login,
-  logout,
-  forgotPassword,
-  resetPassword,
-  getMe,
 };
