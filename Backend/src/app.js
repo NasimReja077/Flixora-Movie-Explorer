@@ -7,6 +7,7 @@ import { apiLimiter } from './middlewares/rateLimitMiddleware.js';
 import errorHandler from './middlewares/errorMiddleware.js';
 
 import authRoutes from './routes/auth.routes.js';
+import tmdbRoutes from './routes/tmdb.routes.js';
 const app = express();
 
 // Security headers
@@ -32,6 +33,7 @@ app.use('/api', apiLimiter);
 
 // Mount routes
 app.use('/api/auth', authRoutes);
+app.use('/api/tmdb', tmdbRoutes);
 
 // test route
 app.get("/", (req, res) => {
