@@ -1,5 +1,5 @@
 // src/validators/userValidator.js
-import { body } from 'express-validator';
+import { body, param } from 'express-validator';
 
 export const updateProfileValidator = [
   body('name')
@@ -49,7 +49,9 @@ export const updatePasswordValidator = [
     }),
 ];
 
-export default {
-  updateProfileValidator,
-  updatePasswordValidator,
-};
+
+export const userIdValidator = [
+  param('userId')
+    .notEmpty().withMessage('User ID is required')
+    .isMongoId().withMessage('Invalid user ID format'),
+];
