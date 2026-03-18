@@ -2,7 +2,7 @@
 import { body, param } from "express-validator";
 
 // Add movie to favorites
-const addFavoriteValidator = [
+export const addFavoriteValidator = [
   body("movieId")
     .notEmpty()
     .withMessage("Movie ID is required")
@@ -16,26 +16,13 @@ const addFavoriteValidator = [
     .withMessage('Movie type must be either "movie" or "tv"'),
 ];
 
-// Remove movie from favorites
-const removeFavoriteValidator = [
+// Get favorites pagination
+export const movieIdParamValidator = [
   param("movieId")
     .notEmpty()
     .withMessage("Movie ID is required")
     .bail()
     .isNumeric()
-    .withMessage("Movie ID must be a number"),
+    .withMessage("Movie ID must be a number")
+    .toInt(),
 ];
-
-// Get favorites pagination
-const favoritePaginationValidator = [
-  param("userId")
-    .optional()
-    .isMongoId()
-    .withMessage("Invalid user ID format"),
-];
-
-export default {
-  addFavoriteValidator,
-  removeFavoriteValidator,
-  favoritePaginationValidator,
-};
