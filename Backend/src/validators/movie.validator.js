@@ -1,7 +1,7 @@
 // src/validators/movieValidator.js
 import { body, query } from 'express-validator';
 
-const addMovieValidator = [
+export const addMovieValidator = [
   body('tmdbId')
     .notEmpty()
     .withMessage('TMDB ID is required')
@@ -60,7 +60,7 @@ const addMovieValidator = [
     .withMessage('Language code must be between 2 and 10 characters'),
 ];
 
-const updateMovieValidator = [
+export const updateMovieValidator = [
   body('tmdbId')
     .optional()
     .isNumeric()
@@ -119,7 +119,7 @@ const updateMovieValidator = [
     .withMessage('Language code must be between 2 and 10 characters'),
 ];
 
-const paginationValidator = [
+export const paginationValidator = [
   query('page')
     .optional()
     .isInt({ min: 1 })
@@ -130,7 +130,7 @@ const paginationValidator = [
     .withMessage('Limit must be between 1 and 100'),
 ];
 
-const searchValidator = [
+export const searchValidator = [
   query('query')
     .trim()
     .notEmpty()
@@ -140,7 +140,7 @@ const searchValidator = [
   ...paginationValidator,
 ];
 
-const discoverValidator = [
+export const discoverValidator = [
   query('with_genres')
     .optional()
     .isString()
@@ -168,11 +168,3 @@ const discoverValidator = [
     .withMessage('Rating must be between 0 and 10'),
   ...paginationValidator,
 ];
-
-export default {
-  addMovieValidator,
-  updateMovieValidator,
-  paginationValidator,
-  searchValidator,
-  discoverValidator,
-};

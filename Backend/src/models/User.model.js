@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema(
       default: 'https://res.cloudinary.com/dhw2dz1km/image/upload/v1773001936/user-default_rvulzb.jpg',
       
     },
+    publicId: {
+    type: String,
+    default: ""
+  },
     role: {
       type: String,
       enum: ['user', 'admin'],
