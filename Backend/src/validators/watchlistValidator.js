@@ -2,7 +2,7 @@
 import { body, param, query } from "express-validator";
 
 // Add movie to watchlist
-const addWatchlistValidator = [
+export const addWatchlistValidator = [
   body("movieId")
     .notEmpty()
     .withMessage("Movie ID is required")
@@ -17,7 +17,7 @@ const addWatchlistValidator = [
 ];
 
 // Remove movie from watchlist
-const removeWatchlistValidator = [
+export const removeWatchlistValidator = [
   param("movieId")
     .notEmpty()
     .withMessage("Movie ID is required")
@@ -27,7 +27,7 @@ const removeWatchlistValidator = [
 ];
 
 // Watchlist pagination
-const watchlistPaginationValidator = [
+export const watchlistPaginationValidator = [
   query("page")
     .optional()
     .isInt({ min: 1 })
@@ -38,9 +38,3 @@ const watchlistPaginationValidator = [
     .isInt({ min: 1, max: 100 })
     .withMessage("Limit must be between 1 and 100"),
 ];
-
-export default {
-  addWatchlistValidator,
-  removeWatchlistValidator,
-  watchlistPaginationValidator,
-};
