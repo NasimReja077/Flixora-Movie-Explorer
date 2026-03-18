@@ -13,6 +13,7 @@ import watchHistoryRoutes from './routes/watchHistory.routes.js';
 import reviewRoutes from './routes/review.routes.js';
 import tmdbRoutes from './routes/tmdb.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import watchlistRoutes from "./routes/watchlist.routes.js";
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use('/api/watch-history', watchHistoryRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/tmdb', tmdbRoutes);
 app.use('/api/admin', adminRoutes);
+app.use("/api/watchlist", watchlistRoutes);
 
 // test route
 app.get("/", (req, res) => {
