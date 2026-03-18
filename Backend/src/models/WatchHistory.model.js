@@ -16,12 +16,14 @@ const watchHistorySchema = new mongoose.Schema(
       enum: ['movie', 'tv'],
       default: 'movie',
     },
+    
     movieData: {
-      title: String,
-      posterUrl: String,
-      releaseDate: String,
-      rating: Number,
+      title: { type: String },
+      posterUrl: { type: String },
+      releaseDate: { type: String },
+      rating: { type: Number },
     },
+
     watchedAt: {
       type: Date,
       default: Date.now,
@@ -32,6 +34,7 @@ const watchHistorySchema = new mongoose.Schema(
   }
 );
 
+watchHistorySchema.index({ user: 1, movieId: 1, movieType: 1 }, { unique: true });
 watchHistorySchema.index({ user: 1, watchedAt: -1 });
 
 export const WatchHistory = mongoose.model('WatchHistory', watchHistorySchema);
