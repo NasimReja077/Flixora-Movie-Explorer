@@ -63,8 +63,9 @@ app.use('/api/admin', adminRoutes);
 app.use("/api/watchlist", watchlistRoutes);
 
 // test route
-app.get("/", (req, res) => {
-  res.send("Flixora API running...");
+
+app.get("/", (_req, res) => {
+     res.status(200).json({ message: "Flixora Server is Running" });
 });
 
 app.use(errorHandler);
