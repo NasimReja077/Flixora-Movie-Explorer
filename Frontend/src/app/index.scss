@@ -1,0 +1,101 @@
+@import url("https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito+Sans:wght@400;600;700;800&display=swap");
+
+:root {
+  --red: #e50914;
+  --red-hover: #c80811;
+  --bg: #070707;
+  --card-bg: rgba(12, 12, 12, 0.85);
+  --input-bg: rgba(40, 40, 40, 0.9);
+  --text: #ffffff;
+  --muted: #bdbdbd;
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: "Nunito Sans", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: rgba(255,255,255,0.04); }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 999px; }
+
+/* ─── Reusable Utilities ─── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  border: 1px solid transparent;
+  border-radius: 0.45rem;
+  font-family: "Nunito Sans", sans-serif;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, border-color 0.2s;
+  white-space: nowrap;
+
+  &:active { transform: translateY(1px); }
+  &:disabled { opacity: 0.6; cursor: not-allowed; pointer-events: none; }
+
+  &.btn-primary  { background: var(--red); color:#fff; border-color: var(--red); &:hover{ background: var(--red-hover); } }
+  &.btn-white    { background:#fff; color:#111; border-color:#fff; &:hover{background:#e8e8e8;} }
+  &.btn-outline  { background: transparent; border-color: rgba(255,255,255,0.4); color:#fff; &:hover{background:rgba(255,255,255,0.08);} }
+  &.btn-ghost    { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.2); color:#fff; &:hover{background:rgba(255,255,255,0.2);} }
+  &.btn-danger   { background:rgba(180,23,37,0.9); border-color:rgba(180,23,37,0.95); color:#fff; &:hover{filter:brightness(1.1);} }
+
+  &.btn-sm  { font-size: 0.82rem; padding: 0.42rem 0.72rem; }
+  &.btn-md  { font-size: 0.95rem; padding: 0.7rem 1rem; }
+  &.btn-lg  { font-size: 1.05rem; padding: 0.88rem 1.3rem; }
+}
+
+.form-input {
+  width: 100%;
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 0.5rem;
+  background: var(--input-bg);
+  color: var(--text);
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s, background 0.2s;
+
+  &::placeholder { color: rgba(255,255,255,0.35); }
+  &:focus { border-color: rgba(229,9,20,0.7); background: rgba(50,50,50,0.95); }
+  &.error { border-color: #ff6b6b; }
+}
+
+.star-rating {
+  display: flex;
+  gap: 0.2rem;
+
+  .star { cursor: pointer; font-size: 1.3rem; transition: color 0.15s; }
+  .star.filled { color: #fbbf24; }
+  .star.empty  { color: rgba(255,255,255,0.3); }
+}
+
+@keyframes fadeUp {
+  from { opacity:0; transform:translateY(16px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity:0; }
+  to   { opacity:1; }
+}
+
+@keyframes scaleIn {
+  from { opacity:0; transform:scale(0.9); }
+  to   { opacity:1; transform:scale(1); }
+}
+
+.animate-fadeUp  { animation: fadeUp  0.42s ease both; }
+.animate-fadeIn  { animation: fadeIn  0.3s  ease both; }
+.animate-scaleIn { animation: scaleIn 0.3s  ease both; }
