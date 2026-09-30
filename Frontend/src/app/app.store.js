@@ -5,6 +5,7 @@ import favoritesReducer from "../features/favorites/store/favorites.slice.js";
 import historyReducer from "../features/history/store/history.slice.js";
 import reviewsReducer from "../features/reviews/store/store.slice.js";
 import watchlistReducer from "../features/watchlist/store/watchlist.slice.js";
+import adminReducer from "../features/admin/store/admin.slice.js";
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     history: historyReducer,
     reviews: reviewsReducer,
     watchlist: watchlistReducer,
+    admin: adminReducer,
   },
 });
 
