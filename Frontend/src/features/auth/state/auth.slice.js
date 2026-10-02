@@ -125,10 +125,12 @@ export const fetchMe = createAsyncThunk(
 const initialState = {
   user: null,
   isAuthenticated: false,
-  loading: false,
+  loading: true,   // true while fetchMe runs on mount
+  initialized: false, // flips true after first fetchMe resolves
   error: null,
   otpStatus: null,
   resetStatus: null,
+  pendingEmail: null, // email waiting for OTP verification
 };
 
 const authSlice = createSlice({
@@ -142,6 +144,13 @@ const authSlice = createSlice({
       state.user = action.payload;
       state.isAuthenticated = !!action.payload;
     },
+    markSessionChecked: (state) => {
+      state.loading = false;
+      state.initialized = true;
+      state.isAuthenticated = false;
+      state.user = null;
+      state.error = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -151,8 +160,9 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = action.payload;
-        state.isAuthenticated = true;
+        // Do NOT set user here — account must be verified via OTP first
+        // Store email so VerifyOtp knows where to redirect back
+        state.pendingEmail = action.payload?.email || null;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
@@ -256,16 +266,18 @@ const authSlice = createSlice({
       })
       .addCase(fetchMe.fulfilled, (state, action) => {
         state.loading = false;
+        state.initialized = true;
         state.user = action.payload;
-        state.isAuthenticated = true;
+        state.isAuthenticated = !!action.payload;
       })
       .addCase(fetchMe.rejected, (state) => {
         state.loading = false;
+        state.initialized = true;
         state.user = null;
         state.isAuthenticated = false;
       });
   },
 });
 
-export const { clearError, setUser } = authSlice.actions;
+export const { clearError, setUser, markSessionChecked } = authSlice.actions;
 export default authSlice.reducer;

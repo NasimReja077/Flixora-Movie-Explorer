@@ -19,12 +19,36 @@ api.interceptors.request.use(
 );
 
 // Add a response interceptor to handle 401 Unauthorized errors
+//
+// Auth endpoints that are EXPECTED to return 401 for unauthenticated users.
+// We must NOT redirect on these — otherwise visiting /reset-password/:token
+// while logged out would immediately bounce to /login.
+const AUTH_SKIP_REDIRECT = [
+  "/auth/me",
+  "/auth/logout",
+  "/auth/forgot-password",
+  "/auth/reset-password",
+  "/auth/verify-otp",
+  "/auth/resend-otp",
+];
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     const originalRequest = error?.config;
+    const requestUrl = originalRequest?.url || "";
 
-    if (error?.response?.status === 401 && originalRequest && !originalRequest._retry) {
+    // Check if this request URL matches any of the auth endpoints we should skip
+    const isAuthEndpoint = AUTH_SKIP_REDIRECT.some((path) =>
+      requestUrl.includes(path)
+    );
+
+    if (
+      error?.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !isAuthEndpoint
+    ) {
       originalRequest._retry = true;
 
       if (typeof window !== "undefined" && window.location.pathname !== "/login") {
