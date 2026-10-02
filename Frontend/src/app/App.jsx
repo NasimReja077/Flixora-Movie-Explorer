@@ -1,9 +1,31 @@
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { RouterProvider } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { routes } from "./app.route.jsx";
 import { Toaster } from "react-hot-toast";
+import {
+  fetchMe,
+  markSessionChecked,
+} from "../features/auth/state/auth.slice.js";
 
 const App = () => {
+  const dispatch = useDispatch();
+
+  // Only check for an active session cookie before hitting /api/auth/me.
+  // This avoids noisy 401s for guests while still restoring logged-in users.
+  useEffect(() => {
+    const hasSessionCookie = document.cookie
+      .split("; ")
+      .some((cookie) => cookie.startsWith("token="));
+
+    if (hasSessionCookie) {
+      dispatch(fetchMe());
+      return;
+    }
+
+    dispatch(markSessionChecked());
+  }, [dispatch]);
+
   return (
     <>
       <Suspense
