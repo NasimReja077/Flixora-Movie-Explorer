@@ -76,6 +76,9 @@ export const searchTMDB = (query, page = 1) =>
 export const getGenres = (type = "movie") =>
   api.get("/tmdb/genres", { params: { type } });
 
+export const getGenreTitles = (genreId, params = {}) =>
+  api.get(`/tmdb/genres/${genreId}/titles`, { params });
+
 export const getCollectionDetails = (id) => api.get(`/tmdb/collection/${id}`);
 export const getPersonDetails = (id) => api.get(`/tmdb/person/${id}`);
 export const getPersonMovieCredits = (id) => api.get(`/tmdb/person/${id}/movie-credits`);

@@ -1,7 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import AppLayout from './AppLayout.jsx';
 
-import ProtectedRoute from '../routes/ProtectedRoute.jsx';
 import GuestRoute from '../routes/GuestRoute.jsx';
 import AuthLayout from '../components/layout/AuthLayout.jsx';
 import Login from '../features/auth/pages/Login.jsx';
@@ -9,6 +8,7 @@ import Signup from '../features/auth/pages/Signup.jsx';
 import ForgotPassword from '../features/auth/pages/ForgotPassword.jsx';
 import VerifyOtp from '../features/auth/pages/VerifyOtp.jsx';
 import ResetPassword from '../features/auth/pages/ResetPassword.jsx';
+import GenreExplorer from '../features/movies/pages/GenreExplorer.jsx';
 
 export const routes = createBrowserRouter([
   // ── Main app (protected in future) ──────────────────────────────────────
@@ -18,7 +18,7 @@ export const routes = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <div>Home Page</div>,
+        element: <GenreExplorer />,
       },
     ],
   },
@@ -52,5 +52,3 @@ export const routes = createBrowserRouter([
   // ── Catch-all ────────────────────────────────────────────────────────────
   { path: '*', element: <Navigate to="/" replace /> },
 ]);
-
-export { ProtectedRoute, GuestRoute };
