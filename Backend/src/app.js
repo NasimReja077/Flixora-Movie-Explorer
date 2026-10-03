@@ -13,6 +13,7 @@ import favoriteRoutes from './routes/favorite.routes.js';
 import watchHistoryRoutes from './routes/watchHistory.routes.js';
 import reviewRoutes from './routes/review.routes.js';
 import tmdbRoutes from './routes/tmdb.routes.js';
+import genreRoutes from './routes/genre.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import watchlistRoutes from "./routes/watchlist.routes.js";
 
@@ -58,6 +59,7 @@ app.use('/api/users', userRouter);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/watch-history', watchHistoryRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use(['/api/genres', '/api/tmdb/genres'], genreRoutes);
 app.use('/api/tmdb', tmdbRoutes);
 app.use('/api/admin', adminRoutes);
 app.use("/api/watchlist", watchlistRoutes);
