@@ -4,7 +4,7 @@ import ApiResponse from '../utils/ApiResponse.js';
 
 import {
   getTrending,getPopularMovies,getTopRatedMovies,getUpcomingMovies,getNowPlayingMovies,getPopularTVShows,getTopRatedTV,
-  getMovieDetails,getTVShowDetails,getMovieReviews,getTVReviews,searchMulti,discoverMovies,discoverTVShows,getGenres,
+  getMovieDetails,getTVShowDetails,getMovieReviews,getTVReviews,searchMulti,discoverMovies,discoverTVShows,getGenreTitles,getGenres,
   getCollectionDetails,getPersonDetails,getPersonMovieCredits,getPersonCombinedCredits,
   getMovieReleaseDates,getMovieImages,getTVImages,
   getMovieSimilar,getTVSeasonDetails,getTVEpisodeDetails,
@@ -332,6 +332,25 @@ export const genres = async (req, res, next) => {
   }
 };
 
+// GET /api/tmdb/genres/:genreId/titles?type=movie&page=1
+export const genreTitles = async (req, res, next) => {
+  try {
+    const { genreId } = req.params;
+    const { type = 'movie', sort_by: sortBy = 'popularity.desc' } = req.query;
+    const page = parsePage(req.query);
+    const data = await getGenreTitles(genreId, type, page, sortBy);
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        { results: data.results, pagination: paginationMeta(data) },
+        'Genre titles fetched'
+      )
+    );
+  } catch (err) {
+    next(new ApiError(err?.response?.status || 502, err?.response?.data?.status_message || err.message));
+  }
+};
+
 // Collections
 
 // GET /api/tmdb/collection/:id
@@ -375,4 +394,3 @@ export const personCombinedCredits = async (req, res, next) => {
     next(new ApiError(err?.response?.status || 502, err?.response?.data?.status_message || err.message));
   }
 };
-
