@@ -17,13 +17,15 @@ tmdbApi.interceptors.response.use(undefined, async (error) => {
     !config ||
     config.method?.toLowerCase() !== 'get' ||
     !retryableCodes.includes(error.code) ||
-    (config.retryCount || 0) >= 2
+    (config.retryCount || 0) >= 3
   ) {
     return Promise.reject(error);
   }
 
   config.retryCount = (config.retryCount || 0) + 1;
-  await new Promise((resolve) => setTimeout(resolve, config.retryCount * 250));
+  await new Promise((resolve) =>
+    setTimeout(resolve, 250 * 2 ** (config.retryCount - 1))
+  );
   return tmdbApi(config);
 });
 
