@@ -1,9 +1,23 @@
-import { Outlet } from 'react-router-dom';
+import { useLocation, Outlet } from 'react-router-dom';
+import Navbar from '../components/common/Navbar.jsx';
+import Footer from '../components/common/Footer.jsx';
 
 const AppLayout = () => {
+  const { pathname } = useLocation();
+  const contentSpacing =
+    pathname === '/'
+      ? ''
+      : pathname === '/genres' || pathname === '/search'
+        ? 'pt-16'
+        : '';
+
   return (
     <div>
-      <Outlet />
+      <Navbar />
+      <div id="main-content" className={contentSpacing}>
+        <Outlet />
+      </div>
+      <Footer />
     </div>
   );
 };
