@@ -1,4 +1,5 @@
-import { Clapperboard, Twitter, Instagram, Youtube } from 'lucide-react';
+import { Clapperboard } from 'lucide-react';
+import { FaInstagram, FaTwitter, FaYoutube } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
@@ -18,13 +19,13 @@ const Footer = () => {
                         </p>
                         <div className="flex items-center gap-4 pt-2">
                             <a href="#" className="w-10 h-10 rounded-full bg-gray-200 dark:bg-white/5 flex items-center justify-center hover:bg-brand-red hover:text-white transition-colors text-gray-500 dark:text-gray-400">
-                                <Twitter className="w-5 h-5" />
+                                <FaTwitter className="w-5 h-5" />
                             </a>
                             <a href="#" className="w-10 h-10 rounded-full bg-gray-200 dark:bg-white/5 flex items-center justify-center hover:bg-brand-red hover:text-white transition-colors text-gray-500 dark:text-gray-400">
-                                <Instagram className="w-5 h-5" />
+                                <FaInstagram className="w-5 h-5" />
                             </a>
                             <a href="#" className="w-10 h-10 rounded-full bg-gray-200 dark:bg-white/5 flex items-center justify-center hover:bg-brand-red hover:text-white transition-colors text-gray-500 dark:text-gray-400">
-                                <Youtube className="w-5 h-5" />
+                                <FaYoutube className="w-5 h-5" />
                             </a>
                         </div>
                     </div>
