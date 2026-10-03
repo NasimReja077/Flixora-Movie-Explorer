@@ -4,9 +4,27 @@ import { apiKey, baseUrl } from '../config/tmdb.config.js';
 
 const tmdbApi = axios.create({
   baseURL: baseUrl,
+  timeout: 10000,
   params: {
     api_key: apiKey,
   },
+});
+
+tmdbApi.interceptors.response.use(undefined, async (error) => {
+  const retryableCodes = ['ECONNRESET', 'ETIMEDOUT', 'ECONNABORTED', 'EAI_AGAIN'];
+  const config = error.config;
+  if (
+    !config ||
+    config.method?.toLowerCase() !== 'get' ||
+    !retryableCodes.includes(error.code) ||
+    (config.retryCount || 0) >= 2
+  ) {
+    return Promise.reject(error);
+  }
+
+  config.retryCount = (config.retryCount || 0) + 1;
+  await new Promise((resolve) => setTimeout(resolve, config.retryCount * 250));
+  return tmdbApi(config);
 });
 
 // Basic Lists 
@@ -108,6 +126,11 @@ export const discoverTVShows = async (filters = {}, page = 1) => {
     params: { ...filters, page },
   });
   return response.data;
+};
+
+export const getGenreTitles = async (genreId, type = 'movie', page = 1, sortBy = 'popularity.desc') => {
+  const discover = type === 'tv' ? discoverTVShows : discoverMovies;
+  return discover({ with_genres: genreId, sort_by: sortBy }, page);
 };
 
 
