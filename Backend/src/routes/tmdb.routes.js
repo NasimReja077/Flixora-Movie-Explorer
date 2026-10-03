@@ -25,6 +25,7 @@ import {
   discoverTVCtrl,
   search,
   genres,
+  genreTitles,
   collectionDetails,
   personDetails,
   personMovieCredits,
@@ -171,7 +172,7 @@ router.get(
 // GET /api/tmdb/genres?type=movie
 router.get(
   '/genres',
-  [query('type').optional().isIn(['movie', 'tv']).withMessage('type must be "movie" or "tv"')],
+  [  query('type').optional().isIn(['movie', 'tv']).withMessage('type must be "movie" or "tv"')],
   validate,
   genres
 );
