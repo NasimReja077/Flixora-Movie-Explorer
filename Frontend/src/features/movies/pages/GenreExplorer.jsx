@@ -3,7 +3,6 @@ import {
   discoverMovies,
   discoverTVShows,
   getGenres,
-  getGenreTitles,
 } from "../service/movie.api.js";
 
 const POSTER_BASE_URL = "https://image.tmdb.org/t/p/w342";
@@ -29,6 +28,7 @@ export default function GenreExplorer() {
   const [resultsLoading, setResultsLoading] = useState(true);
   const [genresError, setGenresError] = useState("");
   const [resultsError, setResultsError] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -36,7 +36,7 @@ export default function GenreExplorer() {
     getGenres(mediaType)
       .then(({ data }) => {
         if (!active) return;
-        setGenres(data?.genres || []);
+        setGenres(data?.data?.genres || []);
         setSelectedGenre(null);
         setPage(1);
         setGenresError("");
@@ -60,15 +60,18 @@ export default function GenreExplorer() {
       ? sortBy.replace("release_date.", "first_air_date.")
       : sortBy;
     const params = { page, sort_by: selectedSort };
-    const request = selectedGenre
-      ? getGenreTitles(selectedGenre, { ...params, type: mediaType })
-      : discover(params);
+    const request = discover({
+      ...params,
+      ...(selectedGenre ? { with_genres: selectedGenre } : {}),
+    });
 
     request
       .then(({ data }) => {
         if (!active) return;
-        setResults(data?.results || []);
-        setPagination(data?.pagination || { page: 1, totalPages: 1, totalResults: 0 });
+        setResults(data?.data?.results || []);
+        setPagination(
+          data?.data?.pagination || { page: 1, totalPages: 1, totalResults: 0 }
+        );
         setResultsError("");
       })
       .catch((error) => {
@@ -84,7 +87,7 @@ export default function GenreExplorer() {
     return () => {
       active = false;
     };
-  }, [mediaType, page, selectedGenre, sortBy]);
+  }, [mediaType, page, retryCount, selectedGenre, sortBy]);
 
   const visibleGenres = genres.filter((genre) =>
     genre.name.toLowerCase().includes(genreSearch.trim().toLowerCase())
@@ -241,7 +244,18 @@ export default function GenreExplorer() {
 
         {resultsError ? (
           <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-5 text-sm text-red-200" role="alert">
-            Could not load titles: {resultsError}
+            <p>Could not load titles: {resultsError}</p>
+            <button
+              type="button"
+              onClick={() => {
+                setResultsLoading(true);
+                setResultsError("");
+                setRetryCount((count) => count + 1);
+              }}
+              className="mt-3 rounded-lg border border-red-200/30 px-3 py-1.5 font-bold hover:bg-red-200/10"
+            >
+              Retry
+            </button>
           </div>
         ) : resultsLoading ? (
           <p className="py-14 text-center text-sm text-white/50" role="status">Finding titles for you...</p>
