@@ -9,6 +9,11 @@ import ForgotPassword from '../features/auth/pages/ForgotPassword.jsx';
 import VerifyOtp from '../features/auth/pages/VerifyOtp.jsx';
 import ResetPassword from '../features/auth/pages/ResetPassword.jsx';
 import GenreExplorer from '../features/movies/pages/GenreExplorer.jsx';
+import Home from '../features/movies/pages/Home.jsx';
+import MoviePage from '../features/movies/pages/MoviePage.jsx';
+import TvShowPage from '../features/movies/pages/TvShowPage.jsx';
+import MovieTvDetails from '../features/movies/pages/MovieTvDetails.jsx';
+import SearchResults from '../features/movies/pages/SearchResults.jsx';
 
 export const routes = createBrowserRouter([
   // ── Main app (protected in future) ──────────────────────────────────────
@@ -18,8 +23,14 @@ export const routes = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <GenreExplorer />,
+        element: <Home />,
       },
+      { path: 'movies', element: <MoviePage /> },
+      { path: 'tv', element: <TvShowPage /> },
+      { path: 'genres', element: <GenreExplorer /> },
+      { path: 'movie/:id', element: <MovieTvDetails /> },
+      { path: 'tv/:id', element: <MovieTvDetails /> },
+      { path: 'search', element: <SearchResults /> },
     ],
   },
 
