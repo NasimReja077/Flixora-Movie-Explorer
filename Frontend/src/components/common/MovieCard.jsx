@@ -1,17 +1,25 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Heart, Star, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useUserActivity } from '../context/UserActivityContext';
-import { useAuth } from '../context/AuthContext';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '../../features/auth/hooks/useAuth';
+import { useFavorites } from '../../features/favorites/hooks/useFavorites';
+import { motion } from 'framer-motion';
 import TrailerModal from './TrailerModal';
 
-const MovieCard = ({ movie }) => {
-    const { isFavorite, toggleFavorite } = useUserActivity();
+const MovieCard = ({ movie: movieProp, item, mediaType }) => {
+    const movie = movieProp || item;
+    const { isFavoriteById, addFavorite, removeFavorite } = useFavorites();
     const { user } = useAuth();
-    const isFav = isFavorite(movie.id);
+    const isFav = Boolean(isFavoriteById[movie.id]);
     const navigate = useNavigate();
     const [showTrailer, setShowTrailer] = useState(false);
+    const title = movie.title || movie.name || 'Movie Title';
+    const poster = movie.poster || (movie.poster_path
+        ? `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+        : null);
+    const rating = movie.rating ?? movie.vote_average?.toFixed(1) ?? '0.0';
+    const year = movie.year || (movie.release_date || movie.first_air_date)?.slice(0, 4) || '2024';
+    const type = movie.media_type || mediaType || 'movie';
 
     const handleFavoriteClick = (e) => {
         e.preventDefault();
@@ -20,11 +28,19 @@ const MovieCard = ({ movie }) => {
             navigate('/login');
             return;
         }
-        toggleFavorite(movie);
+        if (isFav) {
+            removeFavorite(movie.id);
+        } else {
+            addFavorite({
+                movieId: movie.id,
+                movieType: type,
+                movieData: movie,
+            });
+        }
     };
 
     const handleCardClick = () => {
-        navigate(`/movie/${movie.id}`);
+        navigate(`/${type === 'tv' ? 'tv' : 'movie'}/${movie.id}`);
     };
 
     const handleTrailerClick = (e) => {
@@ -49,8 +65,8 @@ const MovieCard = ({ movie }) => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.5 }}
-                        src={movie?.poster || "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1925&auto=format&fit=crop"}
-                        alt={movie?.title || "Movie Poster"}
+                        src={poster || "https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=1925&auto=format&fit=crop"}
+                        alt={title}
                         className="w-full h-full object-cover"
                     />
 
@@ -80,16 +96,16 @@ const MovieCard = ({ movie }) => {
                     {/* Rating Badge */}
                     <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md flex items-center gap-1 z-10 border border-white/10">
                         <Star className="w-3.5 h-3.5 fill-yellow-500 text-yellow-500" />
-                        <span className="text-white text-xs font-bold">{movie?.rating || "0.0"}</span>
+                        <span className="text-white text-xs font-bold">{rating}</span>
                     </div>
                 </div>
 
                 {/* Details */}
                 <div className="flex flex-col gap-1 px-1">
-                    <h3 className="text-gray-900 dark:text-white font-bold text-base md:text-lg truncate group-hover:text-brand-red transition-colors">{movie?.title || "Movie Title"}</h3>
+                    <h3 className="text-gray-900 dark:text-white font-bold text-base md:text-lg truncate group-hover:text-brand-red transition-colors">{title}</h3>
                     <div className="flex items-center justify-between text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium tracking-wide">
-                        <span>{movie?.year || "2024"}</span>
-                        <span className="uppercase text-[10px] bg-gray-200 dark:bg-white/10 px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 transition-colors">{movie?.media_type || 'Movie'}</span>
+                        <span>{year}</span>
+                        <span className="uppercase text-[10px] bg-gray-200 dark:bg-white/10 px-2 py-0.5 rounded text-gray-600 dark:text-gray-300 transition-colors">{type}</span>
                     </div>
                 </div>
             </motion.div>
@@ -97,8 +113,8 @@ const MovieCard = ({ movie }) => {
             <TrailerModal
                 isOpen={showTrailer}
                 onClose={() => setShowTrailer(false)}
-                trailerKey={movie?.trailerKey || movie?.key}
-                title={movie?.title}
+                trailerKey={movie.trailerKey || movie.key}
+                title={title}
             />
         </>
     );
