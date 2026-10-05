@@ -14,6 +14,8 @@ import MoviePage from '../features/movies/pages/MoviePage.jsx';
 import TvShowPage from '../features/movies/pages/TvShowPage.jsx';
 import MovieTvDetails from '../features/movies/pages/MovieTvDetails.jsx';
 import SearchResults from '../features/movies/pages/SearchResults.jsx';
+import FavoritesPage from '../features/favorites/pages/FavoritesPage.jsx';
+import ProtectedRoute from '../routes/ProtectedRoute.jsx';
 
 export const routes = createBrowserRouter([
   // ── Main app (protected in future) ──────────────────────────────────────
@@ -31,6 +33,10 @@ export const routes = createBrowserRouter([
       { path: 'movie/:id', element: <MovieTvDetails /> },
       { path: 'tv/:id', element: <MovieTvDetails /> },
       { path: 'search', element: <SearchResults /> },
+      {
+        element: <ProtectedRoute />,
+        children: [{ path: 'favorites', element: <FavoritesPage /> }],
+      },
     ],
   },
 
