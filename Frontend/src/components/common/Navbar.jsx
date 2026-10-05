@@ -8,6 +8,7 @@ import {
   Home,
   Film,
   Tv,
+  Heart,
   LogOut,
   ChevronDown,
   Tags,
@@ -19,6 +20,7 @@ const NAV_LINKS = [
   { to: "/movies", label: "Movies", icon: Film },
   { to: "/tv", label: "TV Shows", icon: Tv },
   { to: "/genres", label: "Genres", icon: Tags },
+  { to: "/favorites", label: "Favorites", icon: Heart },
 ];
 
 const Navbar = () => {
@@ -204,6 +206,16 @@ const Navbar = () => {
                   </div>
 
                   <div className="border-t border-white/5 pt-1">
+                    <Link
+                      to="/favorites"
+                      role="menuitem"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-[#e4e1e6] transition-colors hover:bg-white/5"
+                    >
+                      <Heart size={14} aria-hidden="true" className="text-[#ff5f8f]" />
+                      Favorite list
+                    </Link>
+
                     <button
                       type="button"
                       role="menuitem"
@@ -282,6 +294,14 @@ const Navbar = () => {
                 <p className="mt-3 px-4 text-[11px] font-semibold text-[#94a3b8]">
                   Your account
                 </p>
+                <Link
+                  to="/favorites"
+                  onClick={() => setMobileOpen(false)}
+                  className="mt-2 flex items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-medium text-[#e4e1e6] transition-colors hover:bg-white/5"
+                >
+                  <Heart size={17} aria-hidden="true" className="text-[#ff5f8f]" />
+                  Favorites
+                </Link>
                 <button
                   type="button"
                   onClick={handleLogout}
