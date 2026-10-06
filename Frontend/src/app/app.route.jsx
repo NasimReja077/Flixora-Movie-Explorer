@@ -15,6 +15,7 @@ import TvShowPage from '../features/movies/pages/TvShowPage.jsx';
 import MovieTvDetails from '../features/movies/pages/MovieTvDetails.jsx';
 import SearchResults from '../features/movies/pages/SearchResults.jsx';
 import FavoritesPage from '../features/favorites/pages/FavoritesPage.jsx';
+import HistoryPage from '../features/history/pages/HistoryPage.jsx';
 import ProtectedRoute from '../routes/ProtectedRoute.jsx';
 
 export const routes = createBrowserRouter([
@@ -35,7 +36,10 @@ export const routes = createBrowserRouter([
       { path: 'search', element: <SearchResults /> },
       {
         element: <ProtectedRoute />,
-        children: [{ path: 'favorites', element: <FavoritesPage /> }],
+        children: [
+          { path: 'favorites', element: <FavoritesPage /> },
+          { path: 'history', element: <HistoryPage /> },
+        ],
       },
     ],
   },

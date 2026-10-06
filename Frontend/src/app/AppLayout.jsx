@@ -7,7 +7,7 @@ const AppLayout = () => {
   const contentSpacing =
     pathname === '/'
       ? ''
-      : pathname === '/genres' || pathname === '/search' || pathname === '/favorites'
+      : pathname === '/genres' || pathname === '/search' || pathname === '/favorites' || pathname === '/history'
         ? 'pt-16'
         : '';
 
