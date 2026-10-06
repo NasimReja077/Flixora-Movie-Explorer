@@ -13,6 +13,7 @@ import {
   LogOut,
   ChevronDown,
   Tags,
+  UserCircle2,
 } from "lucide-react";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 
@@ -209,6 +210,16 @@ const Navbar = () => {
 
                   <div className="border-t border-white/5 pt-1">
                     <Link
+                      to="/profile"
+                      role="menuitem"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-[#e4e1e6] transition-colors hover:bg-white/5"
+                    >
+                      <UserCircle2 size={14} aria-hidden="true" className="text-[#8b5cf6]" />
+                      Profile
+                    </Link>
+
+                    <Link
                       to="/favorites"
                       role="menuitem"
                       onClick={() => setMenuOpen(false)}
@@ -307,9 +318,17 @@ const Navbar = () => {
                   Your account
                 </p>
                 <Link
-                  to="/favorites"
+                  to="/profile"
                   onClick={() => setMobileOpen(false)}
                   className="mt-2 flex items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-medium text-[#e4e1e6] transition-colors hover:bg-white/5"
+                >
+                  <UserCircle2 size={17} aria-hidden="true" className="text-[#8b5cf6]" />
+                  Profile
+                </Link>
+                <Link
+                  to="/favorites"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-left text-sm font-medium text-[#e4e1e6] transition-colors hover:bg-white/5"
                 >
                   <Heart size={17} aria-hidden="true" className="text-[#ff5f8f]" />
                   Favorites
