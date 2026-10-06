@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   clearProfileError,
+  fetchCurrentProfile,
   fetchUserProfile,
 } from "../store/profile.slice.js";
 
@@ -13,6 +14,10 @@ export function useProfile() {
     profile,
     loading,
     error,
+    fetchCurrentProfile: useCallback(
+      () => dispatch(fetchCurrentProfile()),
+      [dispatch]
+    ),
     fetchUserProfile: useCallback(
       (userId) => dispatch(fetchUserProfile(userId)),
       [dispatch]
