@@ -9,11 +9,13 @@ import {
   Film,
   Tv,
   Heart,
+  Bookmark,
   History,
   LogOut,
   ChevronDown,
   Tags,
   UserCircle2,
+  ShieldCheck,
 } from "lucide-react";
 import { useAuth } from "../../features/auth/hooks/useAuth";
 
@@ -23,7 +25,9 @@ const NAV_LINKS = [
   { to: "/tv", label: "TV Shows", icon: Tv },
   { to: "/genres", label: "Genres", icon: Tags },
   { to: "/favorites", label: "Favorites", icon: Heart },
+  { to: "/watchlist", label: "Watchlist", icon: Bookmark },
   { to: "/history", label: "History", icon: History },
+  { to: "/admin", label: "Admin", icon: ShieldCheck, adminOnly: true },
 ];
 
 const Navbar = () => {
@@ -146,7 +150,7 @@ const Navbar = () => {
           </Link>
 
           <div className="hidden items-center gap-1 lg:flex">
-            {NAV_LINKS.map(({ to, label, icon: Icon, end }) => (
+            {NAV_LINKS.filter(({ adminOnly }) => !adminOnly || user?.role === "admin").map(({ to, label, icon: Icon, end }) => (
               <NavLink key={to} to={to} end={end} className={desktopLinkClass}>
                 {({ isActive }) => (
                   <>
@@ -230,6 +234,16 @@ const Navbar = () => {
                     </Link>
 
                     <Link
+                      to="/watchlist"
+                      role="menuitem"
+                      onClick={() => setMenuOpen(false)}
+                      className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-xs font-medium text-[#e4e1e6] transition-colors hover:bg-white/5"
+                    >
+                      <Bookmark size={14} aria-hidden="true" className="text-[#c4b5fd]" />
+                      Watchlist
+                    </Link>
+
+                    <Link
                       to="/history"
                       role="menuitem"
                       onClick={() => setMenuOpen(false)}
@@ -294,7 +308,7 @@ const Navbar = () => {
           )}
 
           <div className="flex flex-col gap-1">
-            {NAV_LINKS.map(({ to, label, icon: Icon, end }) => (
+            {NAV_LINKS.filter(({ adminOnly }) => !adminOnly || user?.role === "admin").map(({ to, label, icon: Icon, end }) => (
               <NavLink
                 key={to}
                 to={to}

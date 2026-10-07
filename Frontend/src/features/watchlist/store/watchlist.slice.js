@@ -53,6 +53,7 @@ const initialState = {
   pagination: null,
   isInWatchlistById: {},
   loading: false,
+  initialized: false,
   error: null,
 };
 
@@ -63,6 +64,7 @@ const watchlistSlice = createSlice({
     clearWatchlistError: (state) => {
       state.error = null;
     },
+    resetWatchlist: () => initialState,
   },
   extraReducers: (builder) => {
     builder
@@ -72,6 +74,7 @@ const watchlistSlice = createSlice({
       })
       .addCase(fetchWatchlist.fulfilled, (state, action) => {
         state.loading = false;
+        state.initialized = true;
         state.items = action.payload.items;
         state.pagination = action.payload.pagination;
         state.isInWatchlistById = Object.fromEntries(
@@ -119,5 +122,5 @@ const watchlistSlice = createSlice({
   },
 });
 
-export const { clearWatchlistError } = watchlistSlice.actions;
+export const { clearWatchlistError, resetWatchlist } = watchlistSlice.actions;
 export default watchlistSlice.reducer;

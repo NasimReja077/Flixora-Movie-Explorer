@@ -5,11 +5,12 @@ import {
   clearWatchlistError,
   fetchWatchlist,
   removeFromWatchlist,
+  resetWatchlist,
 } from "../store/watchlist.slice.js";
 
 export function useWatchlist() {
   const dispatch = useDispatch();
-  const { items, pagination, isInWatchlistById, loading, error } =
+  const { items, pagination, isInWatchlistById, loading, initialized, error } =
     useSelector((state) => state.watchlist);
 
   return {
@@ -17,6 +18,7 @@ export function useWatchlist() {
     pagination,
     isInWatchlistById,
     loading,
+    initialized,
     error,
     fetchWatchlist: useCallback(() => dispatch(fetchWatchlist()), [dispatch]),
     addToWatchlist: useCallback(
@@ -31,6 +33,7 @@ export function useWatchlist() {
       () => dispatch(clearWatchlistError()),
       [dispatch]
     ),
+    resetWatchlist: useCallback(() => dispatch(resetWatchlist()), [dispatch]),
   };
 }
 

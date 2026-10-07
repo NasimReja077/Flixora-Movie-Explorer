@@ -1,10 +1,23 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Bookmark, BookmarkCheck } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { getMovieDetails, getTVShowDetails } from '../service/movie.api.js';
+import { useAuth } from '../../auth/hooks/useAuth.js';
+import { useWatchlist } from '../../watchlist/hooks/useWatchlist.js';
 
 const MovieTvDetails = () => {
   const { id } = useParams();
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const {
+    isInWatchlistById,
+    initialized: watchlistInitialized,
+    loading: watchlistLoading,
+    addToWatchlist,
+    removeFromWatchlist,
+  } = useWatchlist();
   const mediaType = pathname.startsWith('/tv') ? 'tv' : 'movie';
   const requestKey = `${mediaType}:${id}`;
   const [result, setResult] = useState({
@@ -58,6 +71,35 @@ const MovieTvDetails = () => {
     ? `https://image.tmdb.org/t/p/original${details.backdrop_path}`
     : null;
   const releaseDate = details.release_date || details.first_air_date;
+  const isInWatchlist = Boolean(isInWatchlistById[id]);
+
+  const handleWatchlistClick = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      if (isInWatchlist) {
+        await removeFromWatchlist(id).unwrap();
+        toast.success('Removed from your watchlist');
+      } else {
+        await addToWatchlist({
+          movieId: Number(id),
+          movieType: mediaType,
+          movieData: {
+            title,
+            posterPath: details.poster_path || '',
+            voteAverage: Number(details.vote_average || 0),
+            releaseDate: releaseDate || '',
+          },
+        }).unwrap();
+        toast.success('Added to your watchlist');
+      }
+    } catch (error) {
+      toast.error(error || 'Could not update your watchlist');
+    }
+  };
 
   return (
     <main className="min-h-screen bg-primary text-white">
@@ -75,6 +117,15 @@ const MovieTvDetails = () => {
             {mediaType === 'tv' ? 'TV series' : 'Movie'}
           </p>
           <h1 className="max-w-4xl text-4xl font-black md:text-6xl">{title}</h1>
+          <button
+            type="button"
+            onClick={handleWatchlistClick}
+            disabled={Boolean(user) && (!watchlistInitialized || watchlistLoading)}
+            className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-[#c4b5fd]/60 hover:bg-white/15 disabled:cursor-wait disabled:opacity-60"
+          >
+            {isInWatchlist ? <BookmarkCheck className="h-4 w-4 text-[#c4b5fd]" /> : <Bookmark className="h-4 w-4" />}
+            {isInWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
+          </button>
           <div className="mt-4 flex flex-wrap gap-3 text-sm text-white/75">
             {releaseDate && <span>{releaseDate.slice(0, 4)}</span>}
             {details.vote_average != null && (

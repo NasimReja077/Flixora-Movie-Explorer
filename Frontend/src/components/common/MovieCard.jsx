@@ -1,16 +1,26 @@
 import { useState } from 'react';
-import { Heart, Star, Play } from 'lucide-react';
+import { Bookmark, BookmarkCheck, Heart, Star, Play } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 import { useFavorites } from '../../features/favorites/hooks/useFavorites';
+import { useWatchlist } from '../../features/watchlist/hooks/useWatchlist';
 import { motion } from 'framer-motion';
 import TrailerModal from './TrailerModal';
+import toast from 'react-hot-toast';
 
 const MovieCard = ({ movie: movieProp, item, mediaType }) => {
     const movie = movieProp || item;
     const { isFavoriteById, addFavorite, removeFavorite } = useFavorites();
+    const {
+        isInWatchlistById,
+        initialized: watchlistInitialized,
+        loading: watchlistLoading,
+        addToWatchlist,
+        removeFromWatchlist,
+    } = useWatchlist();
     const { user } = useAuth();
     const isFav = Boolean(isFavoriteById[movie.id]);
+    const isInWatchlist = Boolean(isInWatchlistById[movie.id]);
     const navigate = useNavigate();
     const [showTrailer, setShowTrailer] = useState(false);
     const title = movie.title || movie.name || 'Movie Title';
@@ -36,6 +46,37 @@ const MovieCard = ({ movie: movieProp, item, mediaType }) => {
                 movieType: type,
                 movieData: movie,
             });
+        }
+    };
+
+    const handleWatchlistClick = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!user) {
+            navigate('/login');
+            return;
+        }
+        if (!watchlistInitialized || watchlistLoading) return;
+
+        try {
+            if (isInWatchlist) {
+                await removeFromWatchlist(movie.id).unwrap();
+                toast.success('Removed from your watchlist');
+            } else {
+                await addToWatchlist({
+                    movieId: movie.id,
+                    movieType: type,
+                    movieData: {
+                        title,
+                        posterPath: movie.poster_path || movie.posterPath || movie.poster || '',
+                        voteAverage: Number(movie.vote_average ?? movie.voteAverage ?? movie.rating ?? 0),
+                        releaseDate: movie.release_date || movie.first_air_date || movie.releaseDate || '',
+                    },
+                }).unwrap();
+                toast.success('Added to your watchlist');
+            }
+        } catch (error) {
+            toast.error(error || 'Could not update your watchlist');
         }
     };
 
@@ -92,6 +133,20 @@ const MovieCard = ({ movie: movieProp, item, mediaType }) => {
                     >
                         <Heart className={`w-5 h-5 ${isFav ? 'fill-brand-red text-brand-red' : ''}`} />
                     </motion.button>
+
+                    {user && (
+                        <motion.button
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            onClick={handleWatchlistClick}
+                            disabled={!watchlistInitialized || watchlistLoading}
+                            aria-label={isInWatchlist ? `Remove ${title} from watchlist` : `Add ${title} to watchlist`}
+                            title={isInWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
+                            className="absolute top-4 left-4 z-10 rounded-full bg-black/50 p-2 text-white transition-colors hover:bg-black/80 disabled:cursor-wait disabled:opacity-60"
+                        >
+                            {isInWatchlist ? <BookmarkCheck className="h-5 w-5 text-[#c4b5fd]" /> : <Bookmark className="h-5 w-5" />}
+                        </motion.button>
+                    )}
 
                     {/* Rating Badge */}
                     <div className="absolute bottom-4 left-4 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md flex items-center gap-1 z-10 border border-white/10">
