@@ -7,19 +7,17 @@ import TrailerModal from '../../../components/common/TrailerModal';
 import { getMovieDetails, getTVShowDetails } from '../service/movie.api.js';
 import toast from 'react-hot-toast';
 
-const HeroSection = () => {
+const HeroSection = ({ mediaItem, secondaryAction }) => {
   const { trending, trendingTV } = useSelector((state) => state.movies);
   const trendingItems = useMemo(
     () => [...(trending || []), ...(trendingTV || [])],
     [trending, trendingTV]
   );
   const [selectedMovieId, setSelectedMovieId] = useState(null);
-  const movie =
-    trendingItems.find((item) => item.id === selectedMovieId) ||
-    trendingItems[0] ||
-    null;
+  const movie = mediaItem || trendingItems.find((item) => item.id === selectedMovieId) || trendingItems[0] || null;
   const currentMovieId = movie?.id;
   const navigate = useNavigate();
+  const currentMediaType = movie?.mediaType || movie?.media_type || 'movie';
 
   // Trailer states
   const [isTrailerOpen, setIsTrailerOpen] = useState(false);
@@ -43,7 +41,7 @@ const HeroSection = () => {
   }, []);
 
   const switchMovie = useCallback(() => {
-    if (!trendingItems.length) return;
+    if (mediaItem || !trendingItems.length) return;
     const candidates =
       trendingItems.length > 1
         ? trendingItems.filter((item) => item.id !== currentMovieId)
@@ -53,14 +51,14 @@ const HeroSection = () => {
     setTrailerVideoId(null);
     setVisibleTrailerId(null);
     setPlayerState({ trailerId: null, player: null });
-  }, [currentMovieId, trendingItems]);
+  }, [currentMovieId, mediaItem, trendingItems]);
 
   // Rotate featured titles while avoiding state updates from inside render-time updaters.
   useEffect(() => {
-    if (!movie) return undefined;
+    if (!movie || mediaItem) return undefined;
     const interval = setInterval(switchMovie, 45000);
     return () => clearInterval(interval);
-  }, [movie, switchMovie]);
+  }, [mediaItem, movie, switchMovie]);
 
   // Fetch trailer for backdrop
   useEffect(() => {
@@ -68,14 +66,17 @@ const HeroSection = () => {
       if (!movie || trailerVideoId) return;
       setFetchingTrailer(true);
       try {
-        const mediaType = movie.mediaType || movie.media_type || 'movie';
-        const request = mediaType === 'tv'
+        let videos = movie.videos?.results;
+        if (!videos) {
+          const request = currentMediaType === 'tv'
           ? getTVShowDetails(movie.id)
           : getMovieDetails(movie.id);
-        const { data } = await request;
-        const trailer = data.data.videos?.results?.find(
+          const { data } = await request;
+          videos = data.data.videos?.results;
+        }
+        const trailer = videos?.find(
           (vid) => vid.site === 'YouTube' && vid.type === 'Trailer'
-        ) || data.data.videos?.results?.[0];
+        ) || videos?.[0];
         
         if (trailer) {
           setTrailerVideoId(trailer.key);
@@ -88,7 +89,7 @@ const HeroSection = () => {
     };
 
     fetchTrailerForBackdrop();
-  }, [movie, trailerVideoId]);
+  }, [currentMediaType, movie, trailerVideoId]);
 
   // Set up delay timer to display trailer in background
   useEffect(() => {
@@ -182,8 +183,7 @@ const HeroSection = () => {
   };
 
   const handleMoreDetails = () => {
-    const mediaType = movie.mediaType || movie.media_type || 'movie';
-    navigate(`/${mediaType === 'tv' ? 'tv' : 'movie'}/${movie.id}`);
+    navigate(`/${currentMediaType === 'tv' ? 'tv' : 'movie'}/${movie.id}`);
   };
 
   if (!movie) {
@@ -274,7 +274,7 @@ const HeroSection = () => {
           <div className="max-w-4xl">
             <div className="flex items-center flex-wrap gap-4 mb-4">
               <span className="bg-primary/15 backdrop-blur-md text-primary border border-primary/20 text-xs md:text-sm px-4 py-1.5 font-medium tracking-wide rounded-full">
-                {movie?.mediaType === 'tv' ? 'Featured Series' : 'Featured Movie'}
+                {currentMediaType === 'tv' ? 'Featured Series' : 'Featured Movie'}
               </span>
 
               <div className="flex items-center gap-1.5 text-yellow-500 font-medium bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-md border border-white/10">
@@ -312,13 +312,15 @@ const HeroSection = () => {
                 <span>Watch Trailer</span>
               </button>
 
-              <button
-                type="button"
-                className="h-12 md:h-14 flex-1 md:flex-none px-6 md:px-8 font-semibold tracking-wide text-sm gap-2 rounded-full backdrop-blur-md bg-white/5 hover:bg-white/15 transition-all active:scale-95 border-white/20 text-white"
-                onClick={handleMoreDetails}
-              >
-                <Info className="h-5 w-5" /> <span>Details</span>
-              </button>
+              {secondaryAction || (
+                <button
+                  type="button"
+                  className="h-12 md:h-14 flex-1 md:flex-none px-6 md:px-8 font-semibold tracking-wide text-sm gap-2 rounded-full backdrop-blur-md bg-white/5 hover:bg-white/15 transition-all active:scale-95 border-white/20 text-white"
+                  onClick={handleMoreDetails}
+                >
+                  <Info className="h-5 w-5" /> <span>Details</span>
+                </button>
+              )}
             </div>
           </div>
         </motion.div>

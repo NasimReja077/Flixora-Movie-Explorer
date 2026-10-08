@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { Bookmark, BookmarkCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getMovieDetails, getTVShowDetails } from '../service/movie.api.js';
+import MovieVideosHeroSection from '../components/MovieVideosHeroSection.jsx';
 import { useAuth } from '../../auth/hooks/useAuth.js';
 import { useWatchlist } from '../../watchlist/hooks/useWatchlist.js';
 
@@ -67,9 +68,6 @@ const MovieTvDetails = () => {
   }
 
   const title = details.title || details.name;
-  const backdrop = details.backdrop_path
-    ? `https://image.tmdb.org/t/p/original${details.backdrop_path}`
-    : null;
   const releaseDate = details.release_date || details.first_air_date;
   const isInWatchlist = Boolean(isInWatchlistById[id]);
 
@@ -103,41 +101,67 @@ const MovieTvDetails = () => {
 
   return (
     <main className="min-h-screen bg-primary text-white">
-      <section className="relative isolate flex min-h-[70vh] items-end overflow-hidden px-6 pb-12 pt-32 md:min-h-[80vh] md:px-12">
-        {backdrop && (
-          <img
-            src={backdrop}
-            alt=""
-            className="absolute inset-0 -z-20 h-full w-full object-cover"
-          />
-        )}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-primary via-primary/70 to-black/25" />
-        <div className="mx-auto w-full max-w-7xl">
-          <p className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-accent">
-            {mediaType === 'tv' ? 'TV series' : 'Movie'}
-          </p>
-          <h1 className="max-w-4xl text-4xl font-black md:text-6xl">{title}</h1>
+      <MovieVideosHeroSection
+        key={requestKey}
+        mediaItem={{ ...details, mediaType }}
+        secondaryAction={(
           <button
             type="button"
             onClick={handleWatchlistClick}
             disabled={Boolean(user) && (!watchlistInitialized || watchlistLoading)}
-            className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-semibold text-white transition hover:border-[#c4b5fd]/60 hover:bg-white/15 disabled:cursor-wait disabled:opacity-60"
+            className="h-12 flex-1 rounded-full border border-white/20 bg-white/5 px-5 text-sm font-semibold text-white transition hover:bg-white/15 disabled:cursor-wait disabled:opacity-60 md:h-14 md:flex-none md:px-8"
           >
-            {isInWatchlist ? <BookmarkCheck className="h-4 w-4 text-[#c4b5fd]" /> : <Bookmark className="h-4 w-4" />}
-            {isInWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
+            <span className="inline-flex items-center gap-2">
+              {isInWatchlist
+                ? <BookmarkCheck className="h-4 w-4 text-[#c4b5fd]" />
+                : <Bookmark className="h-4 w-4" />}
+              {isInWatchlist ? 'Remove from watchlist' : 'Add to watchlist'}
+            </span>
           </button>
-          <div className="mt-4 flex flex-wrap gap-3 text-sm text-white/75">
-            {releaseDate && <span>{releaseDate.slice(0, 4)}</span>}
-            {details.vote_average != null && (
-              <span>★ {details.vote_average.toFixed(1)} / 10</span>
-            )}
-            {details.genres?.map((genre) => <span key={genre.id}>{genre.name}</span>)}
-          </div>
+        )}
+      />
+      <section className="mx-auto max-w-7xl px-6 pb-16 md:px-12">
+        <div className="border-t border-white/10 py-8">
+          <h2 className="text-xl font-bold">About {title}</h2>
           {details.overview && (
-            <p className="mt-6 max-w-2xl text-base leading-7 text-white/80 md:text-lg">
-              {details.overview}
-            </p>
+            <p className="mt-3 max-w-4xl leading-7 text-white/70">{details.overview}</p>
           )}
+          <div className="mt-6 flex flex-wrap gap-3">
+            {details.genres?.map((genre) => (
+              <span
+                key={genre.id}
+                className="rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/75"
+              >
+                {genre.name}
+              </span>
+            ))}
+          </div>
+          <dl className="mt-8 grid gap-5 text-sm sm:grid-cols-2 lg:grid-cols-4">
+            {releaseDate && (
+              <div>
+                <dt className="text-white/45">{mediaType === 'tv' ? 'First aired' : 'Released'}</dt>
+                <dd className="mt-1 font-medium">{releaseDate}</dd>
+              </div>
+            )}
+            {details.runtime && (
+              <div>
+                <dt className="text-white/45">Runtime</dt>
+                <dd className="mt-1 font-medium">{details.runtime} minutes</dd>
+              </div>
+            )}
+            {details.number_of_seasons && (
+              <div>
+                <dt className="text-white/45">Seasons</dt>
+                <dd className="mt-1 font-medium">{details.number_of_seasons}</dd>
+              </div>
+            )}
+            {details.status && (
+              <div>
+                <dt className="text-white/45">Status</dt>
+                <dd className="mt-1 font-medium">{details.status}</dd>
+              </div>
+            )}
+          </dl>
         </div>
       </section>
     </main>
