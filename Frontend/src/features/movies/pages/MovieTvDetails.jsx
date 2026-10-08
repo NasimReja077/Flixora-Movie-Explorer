@@ -70,6 +70,17 @@ const MovieTvDetails = () => {
   const title = details.title || details.name;
   const releaseDate = details.release_date || details.first_air_date;
   const isInWatchlist = Boolean(isInWatchlistById[id]);
+  const cast = details.credits?.cast || [];
+  const recommendations = details.recommendations?.results || [];
+  const reviews = details.reviews?.results || [];
+
+  const getPosterUrl = (path, size = 'w342') =>
+    path ? `https://image.tmdb.org/t/p/${size}${path}` : null;
+
+  const openTitle = (item) => {
+    const recommendedMediaType = item.media_type || mediaType;
+    navigate(`/${recommendedMediaType === 'tv' ? 'tv' : 'movie'}/${item.id}`);
+  };
 
   const handleWatchlistClick = async () => {
     if (!user) {
@@ -163,6 +174,120 @@ const MovieTvDetails = () => {
             )}
           </dl>
         </div>
+
+        <section className="border-t border-white/10 py-8" aria-labelledby="cast-heading">
+          <h2 id="cast-heading" className="text-2xl font-bold">Cast</h2>
+          {cast.length ? (
+            <div className="mt-5 flex gap-4 overflow-x-auto pb-4">
+              {cast.slice(0, 20).map((person) => {
+                const profileUrl = getPosterUrl(person.profile_path, 'w185');
+                return (
+                  <article key={person.cast_id || person.credit_id || person.id} className="w-36 shrink-0">
+                    {profileUrl ? (
+                      <img
+                        src={profileUrl}
+                        alt={person.name}
+                        loading="lazy"
+                        className="aspect-[2/3] w-full rounded-xl bg-white/5 object-cover"
+                      />
+                    ) : (
+                      <div
+                        role="img"
+                        aria-label={`No photo available for ${person.name}`}
+                        className="flex aspect-[2/3] w-full items-center justify-center rounded-xl bg-white/5 text-3xl font-bold text-white/30"
+                      >
+                        {person.name?.charAt(0) || '?'}
+                      </div>
+                    )}
+                    <h3 className="mt-3 truncate text-sm font-semibold">{person.name}</h3>
+                    <p className="mt-1 truncate text-xs text-white/55">
+                      {person.character || person.job || 'Cast'}
+                    </p>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-white/55">Cast information is not available.</p>
+          )}
+        </section>
+
+        <section className="border-t border-white/10 py-8" aria-labelledby="recommendations-heading">
+          <h2 id="recommendations-heading" className="text-2xl font-bold">You may also like</h2>
+          {recommendations.length ? (
+            <div className="mt-5 flex gap-4 overflow-x-auto pb-4">
+              {recommendations.slice(0, 20).map((item) => {
+                const posterUrl = getPosterUrl(item.poster_path);
+                const recommendedTitle = item.title || item.name;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => openTitle(item)}
+                    className="w-40 shrink-0 text-left transition hover:-translate-y-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-accent"
+                  >
+                    {posterUrl ? (
+                      <img
+                        src={posterUrl}
+                        alt=""
+                        loading="lazy"
+                        className="aspect-[2/3] w-full rounded-xl bg-white/5 object-cover"
+                      />
+                    ) : (
+                      <div className="flex aspect-[2/3] w-full items-center justify-center rounded-xl bg-white/5 px-3 text-center text-sm text-white/45">
+                        No poster available
+                      </div>
+                    )}
+                    <span className="mt-3 block truncate text-sm font-semibold">{recommendedTitle}</span>
+                    {item.vote_average != null && (
+                      <span className="mt-1 block text-xs text-white/55">
+                        ★ {Number(item.vote_average).toFixed(1)} / 10
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-white/55">No recommendations available.</p>
+          )}
+        </section>
+
+        <section className="border-t border-white/10 py-8" aria-labelledby="reviews-heading">
+          <h2 id="reviews-heading" className="text-2xl font-bold">Reviews</h2>
+          {reviews.length ? (
+            <div className="mt-5 grid gap-4 lg:grid-cols-2">
+              {reviews.slice(0, 10).map((review) => {
+                const rating = review.author_details?.rating;
+                return (
+                  <article
+                    key={review.id}
+                    className="rounded-2xl border border-white/10 bg-white/[0.03] p-5"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <h3 className="font-semibold">{review.author || 'TMDB user'}</h3>
+                      {rating != null && (
+                        <span className="text-sm font-medium text-amber-300">
+                          ★ {rating} / 10
+                        </span>
+                      )}
+                    </div>
+                    {review.created_at && (
+                      <p className="mt-1 text-xs text-white/45">
+                        {new Date(review.created_at).toLocaleDateString()}
+                      </p>
+                    )}
+                    <p className="mt-4 whitespace-pre-line text-sm leading-6 text-white/70">
+                      {review.content}
+                    </p>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-white/55">No reviews available.</p>
+          )}
+        </section>
       </section>
     </main>
   );
