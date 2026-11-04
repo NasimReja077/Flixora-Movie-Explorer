@@ -250,7 +250,7 @@ const ProfilePage = () => {
                   onClick={() => setIsEditSheetOpen(true)}
                   className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[#8b5cf6] to-[#d62b70] px-6 py-3 text-sm font-bold text-white shadow-xl transition hover:scale-105 active:scale-95"
                 >
-                  <Tune className="h-4 w-4" />
+                  <SlidersHorizontal className="h-4 w-4" />
                   <span>Edit Profile</span>
                 </button>
                 <button
@@ -365,7 +365,7 @@ const ProfilePage = () => {
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                        <Equalizer className="h-5 w-5 text-[#8b5cf6]" /> Sensory Profile
+                        <SlidersHorizontal className="h-5 w-5 text-[#8b5cf6]" /> Sensory Profile
                       </h3>
                       <span className="text-[11px] font-bold text-[#8b5cf6] uppercase">
                         Reference Mode
