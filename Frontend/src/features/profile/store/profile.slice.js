@@ -40,6 +40,13 @@ const profileSlice = createSlice({
     clearProfileError: (state) => {
       state.error = null;
     },
+    setCurrentProfileUser: (state, action) => {
+      if (state.profile) {
+        state.profile.user = { ...state.profile.user, ...action.payload };
+      } else {
+        state.profile = { user: action.payload, stats: {} };
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -70,5 +77,5 @@ const profileSlice = createSlice({
   },
 });
 
-export const { clearProfileError } = profileSlice.actions;
+export const { clearProfileError, setCurrentProfileUser } = profileSlice.actions;
 export default profileSlice.reducer;

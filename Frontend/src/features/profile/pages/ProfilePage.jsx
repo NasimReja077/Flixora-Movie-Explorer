@@ -52,8 +52,14 @@ const formatDate = (value) => {
 };
 
 const ProfilePage = () => {
-  const { user } = useAuth();
-  const { profile, loading, error, fetchCurrentProfile } = useProfile();
+  const { user, setUser } = useAuth();
+  const {
+    profile,
+    loading,
+    error,
+    fetchCurrentProfile,
+    setCurrentProfileUser,
+  } = useProfile();
   const { items: watchlistItems } = useWatchlist();
   const { items: favoriteItems } = useFavorites();
 
@@ -61,7 +67,6 @@ const ProfilePage = () => {
 
   // Edit profile state
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
-  const [editName, setEditName] = useState("");
   const [editUsername, setEditUsername] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
 
@@ -80,7 +85,6 @@ const ProfilePage = () => {
 
   useEffect(() => {
     if (profileUser) {
-      setEditName(profileUser.fullname || profileUser.name || "");
       setEditUsername(profileUser.username || "");
     }
   }, [profileUser]);
@@ -107,9 +111,11 @@ const ProfilePage = () => {
 
     const toastId = toast.loading("Uploading high-definition avatar...");
     try {
-      await uploadAvatar(formData);
+      const { avatarUrl } = await uploadAvatar(formData);
+      const updatedUser = { ...user, avatar: avatarUrl };
+      setUser(updatedUser);
+      setCurrentProfileUser(updatedUser);
       toast.success("Avatar updated successfully", { id: toastId });
-      fetchCurrentProfile();
     } catch {
       toast.error("Could not upload avatar", { id: toastId });
     }
@@ -119,13 +125,13 @@ const ProfilePage = () => {
     e.preventDefault();
     setSavingProfile(true);
     try {
-      await updateProfile({
-        fullname: editName,
-        username: editUsername,
-      });
+      const { user: updatedUser } = await updateProfile({ username: editUsername });
+      if (!updatedUser) throw new Error("Profile update response did not include the updated user");
+
+      setUser({ ...user, ...updatedUser });
+      setCurrentProfileUser(updatedUser);
       toast.success("Profile updated");
       setIsEditSheetOpen(false);
-      fetchCurrentProfile();
     } catch (err) {
       toast.error(err?.response?.data?.message || "Could not update profile");
     } finally {
@@ -676,24 +682,16 @@ const ProfilePage = () => {
         <form onSubmit={handleProfileSave} className="space-y-5">
           <div>
             <label className="text-xs font-semibold text-white/70 block mb-1.5">
-              Full Name
-            </label>
-            <input
-              type="text"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white focus:border-[#8b5cf6] focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label className="text-xs font-semibold text-white/70 block mb-1.5">
               Username
             </label>
             <input
               type="text"
               value={editUsername}
               onChange={(e) => setEditUsername(e.target.value)}
+              minLength={3}
+              maxLength={30}
+              pattern="[a-zA-Z0-9_]+"
+              required
               className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white focus:border-[#8b5cf6] focus:outline-none"
             />
           </div>

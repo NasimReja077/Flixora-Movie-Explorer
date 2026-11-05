@@ -18,6 +18,7 @@ export const updateProfile = async (req, res, next) => {
   try {
     const { username } = req.body;
     const user = await User.findById(req.user._id);
+    if (!user) throw new ApiError(404, 'User not found');
 
     if (username) {
       user.username = username.trim();
@@ -64,7 +65,7 @@ export const uploadAvatar = async (req, res, next) => {
     // Upload new avatar
     const uploadResult = await imageUploadToCloudinary(req.file, CLOUDINARY_FOLDERS.AVATARS);
 
-    user.avatar = uploadResult.secure_url;
+    user.avatar = uploadResult.url;
     await user.save();
 
     res.status(200).json(

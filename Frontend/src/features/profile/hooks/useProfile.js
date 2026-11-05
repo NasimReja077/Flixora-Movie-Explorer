@@ -4,6 +4,7 @@ import {
   clearProfileError,
   fetchCurrentProfile,
   fetchUserProfile,
+  setCurrentProfileUser,
 } from "../store/profile.slice.js";
 
 export function useProfile() {
@@ -20,6 +21,10 @@ export function useProfile() {
     ),
     fetchUserProfile: useCallback(
       (userId) => dispatch(fetchUserProfile(userId)),
+      [dispatch]
+    ),
+    setCurrentProfileUser: useCallback(
+      (user) => dispatch(setCurrentProfileUser(user)),
       [dispatch]
     ),
     clearProfileError: useCallback(

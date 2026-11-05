@@ -2,14 +2,17 @@
 import { body, param } from 'express-validator';
 
 export const updateProfileValidator = [
-  body('name')
+  body('username')
     .optional()
     .trim()
     .notEmpty()
-    .withMessage('Name cannot be empty')
+    .withMessage('Username cannot be empty')
     .bail()
-    .isLength({ min: 2, max: 50 })
-    .withMessage('Name must be between 2 and 50 characters')
+    .isLength({ min: 3, max: 30 })
+    .withMessage('Username must be between 3 and 30 characters')
+    .bail()
+    .matches(/^[a-zA-Z0-9_]+$/)
+    .withMessage('Username can only contain letters, numbers, and underscores')
     .escape(),
 ];
 
