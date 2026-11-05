@@ -1,17 +1,17 @@
-import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
-import { searchTMDB } from "../service/movie.api.js";
-
-const POSTER_BASE_URL = "https://image.tmdb.org/t/p/w342";
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Search, Film, Sparkles } from 'lucide-react';
+import { searchTMDB } from '../service/movie.api.js';
+import MovieCard, { MovieCardSkeleton } from '../../../components/common/MovieCard.jsx';
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
-  const query = searchParams.get("q")?.trim() || "";
+  const query = searchParams.get('q')?.trim() || '';
   const [result, setResult] = useState({
-    query: "",
+    query: '',
     results: [],
     loading: Boolean(query),
-    error: "",
+    error: '',
   });
 
   useEffect(() => {
@@ -25,21 +25,21 @@ const SearchResults = () => {
           setResult({
             query,
             results: (data?.data?.results || []).filter(
-              (item) => item.media_type === "movie" || item.media_type === "tv"
+              (item) => item.media_type === 'movie' || item.media_type === 'tv'
             ),
             loading: false,
-            error: "",
+            error: '',
           });
         }
       })
       .catch((error) => {
-        console.error("Could not search titles.", error);
+        console.error('Could not search titles.', error);
         if (active) {
           setResult({
             query,
             results: [],
             loading: false,
-            error: error.response?.data?.message || "Could not search titles. Please try again.",
+            error: error.response?.data?.message || 'Could not search titles. Please try again.',
           });
         }
       });
@@ -52,58 +52,69 @@ const SearchResults = () => {
   const currentResult = result.query === query ? result : null;
 
   return (
-    <main className="min-h-screen bg-primary px-5 pb-16 pt-10 text-white sm:px-8 md:px-12">
+    <main className="min-h-screen bg-[#090909] px-6 pb-20 pt-28 text-white selection:bg-[#8b5cf6] selection:text-white md:px-12">
       <section className="mx-auto max-w-7xl">
-        <h1 className="mb-2 text-3xl font-black sm:text-4xl">
-          {query ? `Search results for “${query}”` : "Search"}
-        </h1>
+        {/* Header */}
+        <div className="mb-10 flex flex-col gap-3 border-b border-white/10 pb-6">
+          <div className="flex items-center gap-2">
+            <span className="flex h-6 items-center gap-1.5 rounded-full border border-[#8b5cf6]/30 bg-[#8b5cf6]/10 px-3 text-xs font-semibold uppercase tracking-wider text-[#a78bfa]">
+              <Search className="h-3 w-3" />
+              Search Library
+            </span>
+          </div>
 
+          <h1 className="text-3xl sm:text-5xl font-black tracking-tight text-white">
+            {query ? (
+              <>
+                Results for <span className="bg-gradient-to-r from-[#8b5cf6] to-[#d62b70] bg-clip-text text-transparent">“{query}”</span>
+              </>
+            ) : (
+              'Search Titles'
+            )}
+          </h1>
+
+          {currentResult && !currentResult.loading && (
+            <p className="text-xs sm:text-sm text-white/50">
+              Found {currentResult.results.length} titles matching your query
+            </p>
+          )}
+        </div>
+
+        {/* Content */}
         {!query ? (
-          <p className="mt-6 text-white/60">Enter a title in the search bar to find movies and TV shows.</p>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.02] py-24 text-center">
+            <Search className="mx-auto h-12 w-12 text-white/20 mb-4" />
+            <p className="text-base text-white/60">Enter a movie or series title in the search bar to find matching releases.</p>
+          </div>
         ) : !currentResult || currentResult.loading ? (
-          <p className="mt-6 text-white/60" role="status">Searching titles...</p>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {[...Array(12)].map((_, i) => (
+              <MovieCardSkeleton key={i} />
+            ))}
+          </div>
         ) : currentResult?.error ? (
-          <p className="mt-6 text-red-400" role="alert">{currentResult.error}</p>
+          <div className="rounded-2xl border border-red-500/20 bg-red-500/10 p-8 text-center text-red-200">
+            <p className="font-semibold">{currentResult.error}</p>
+          </div>
         ) : currentResult?.results.length ? (
-          <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-            {currentResult.results.map((item) => {
-              const title = item.title || item.name;
-              const releaseDate = item.release_date || item.first_air_date;
-              const detailPath = item.media_type === "tv" ? `/tv/${item.id}` : `/movie/${item.id}`;
-
-              return (
-                <Link
-                  key={`${item.media_type}-${item.id}`}
-                  to={detailPath}
-                  className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] transition hover:-translate-y-1 hover:border-white/25"
-                >
-                  <div className="aspect-[2/3] bg-white/5">
-                    {item.poster_path ? (
-                      <img
-                        src={`${POSTER_BASE_URL}${item.poster_path}`}
-                        alt={`${title} poster`}
-                        loading="lazy"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center p-4 text-center text-sm text-white/45">
-                        Poster unavailable
-                      </div>
-                    )}
-                  </div>
-                  <div className="p-3">
-                    <h2 className="line-clamp-2 text-sm font-bold">{title}</h2>
-                    <p className="mt-1 text-xs text-white/50">
-                      {item.media_type === "tv" ? "TV show" : "Movie"}
-                      {releaseDate ? ` · ${releaseDate.slice(0, 4)}` : ""}
-                    </p>
-                  </div>
-                </Link>
-              );
-            })}
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-6 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            {currentResult.results.map((item) => (
+              <MovieCard
+                key={`${item.media_type || 'title'}-${item.id}`}
+                movie={item}
+                mediaType={item.media_type}
+                showMediaType={true}
+              />
+            ))}
           </div>
         ) : (
-          <p className="mt-6 text-white/60">No titles matched your search.</p>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.02] py-24 text-center">
+            <Film className="mx-auto h-12 w-12 text-white/20 mb-4" />
+            <h3 className="text-lg font-bold text-white">No titles found</h3>
+            <p className="mt-1 text-sm text-white/50">
+              We couldn’t find any matches for “{query}”. Try checking for typos or searching with different keywords.
+            </p>
+          </div>
         )}
       </section>
     </main>

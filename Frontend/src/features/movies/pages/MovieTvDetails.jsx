@@ -23,8 +23,13 @@ import {
   EyeOff,
   User,
   CheckCircle,
+  Play,
+  Heart,
+  Image as ImageIcon,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
+import TrailerModal from '../../../components/common/TrailerModal.jsx';
 import {
   getMovieDetails,
   getTVShowDetails,
@@ -97,6 +102,30 @@ const MovieTvDetails = () => {
 
   // Spoilers reveal map: reviewId -> boolean
   const [revealedSpoilers, setRevealedSpoilers] = useState({});
+
+  // Hero Experience Phase: 'poster' (initial 3-5 seconds) -> 'theater' (full video backdrop)
+  const [heroPhase, setHeroPhase] = useState('poster');
+  const [countdown, setCountdown] = useState(4);
+  const [isTrailerModalOpen, setIsTrailerModalOpen] = useState(false);
+
+  // 3-5 second cinematic transition from poster card to theater video
+  useEffect(() => {
+    setHeroPhase('poster');
+    setCountdown(4);
+
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setHeroPhase('theater');
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [requestKey]);
 
   const castRailRef = useRef(null);
   const recommendationsRailRef = useRef(null);
@@ -417,30 +446,307 @@ const MovieTvDetails = () => {
   const tmdbAudienceScore = Math.round((details.vote_average || 8.5) * 10);
   const tmdbCriticsScore = Math.min(99, Math.round(tmdbAudienceScore + 4));
 
+  // Trailer key for instant modal/playback
+  const trailerItem =
+    details.videos?.results?.find(
+      (vid) => vid.site === 'YouTube' && vid.type === 'Trailer'
+    ) || details.videos?.results?.[0];
+  const trailerKey = trailerItem?.key;
+
   return (
     <main className="min-h-screen bg-[#090909] text-white selection:bg-[#8b5cf6] selection:text-white">
-      {/* 1. Cinematic Hero Section */}
-      <MovieVideosHeroSection
-        key={requestKey}
-        mediaItem={{ ...details, mediaType }}
-        isFavorite={isFavorite}
-        onFavoriteClick={handleFavoriteClick}
-        onWriteReviewClick={() => setIsReviewSheetOpen(true)}
-        secondaryAction={
-          <button
-            type="button"
-            onClick={handleWatchlistClick}
-            disabled={Boolean(user) && (!watchlistInitialized || watchlistLoading)}
-            className="flex h-12 sm:h-14 items-center gap-2 rounded-full border border-white/20 bg-white/5 px-6 sm:px-7 text-sm font-semibold text-white backdrop-blur-xl transition hover:bg-white/15 disabled:cursor-wait shadow-md active:scale-95"
+      {/* 1. Cinematic Hero Section: Phase 1 Poster Card (3-5s) -> Phase 2 Full Video Theater */}
+      <AnimatePresence mode="wait">
+        {heroPhase === 'poster' ? (
+          <motion.div
+            key="poster-hero-phase"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0, scale: 0.98 }}
+            transition={{ duration: 0.65, ease: 'easeInOut' }}
+            className="relative min-h-[82vh] md:min-h-[88vh] lg:min-h-[92vh] w-full overflow-hidden flex items-center justify-center pt-28 pb-16 px-6 md:px-12 bg-[#090909]"
           >
-            {isInWatchlist ? (
-              <BookmarkCheck className="h-4 w-4 text-[#8b5cf6]" />
-            ) : (
-              <Bookmark className="h-4 w-4" />
-            )}
-            <span>{isInWatchlist ? 'In Watchlist' : '+ Watchlist'}</span>
-          </button>
-        }
+            {/* Ambient glows & blurred backdrop */}
+            <div className="absolute inset-0 z-0">
+              {details.backdrop_path && (
+                <img
+                  src={`https://image.tmdb.org/t/p/w1280${details.backdrop_path}`}
+                  alt=""
+                  className="h-full w-full object-cover object-center opacity-20 blur-md scale-105"
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-[#090909] via-[#090909]/80 to-[#090909]/60" />
+              <div className="absolute inset-0 bg-gradient-to-r from-[#090909] via-[#090909]/60 to-[#090909]" />
+              <div className="pointer-events-none absolute -bottom-10 -left-10 h-96 w-96 rounded-full bg-[#8b5cf6]/25 blur-[140px]" />
+              <div className="pointer-events-none absolute top-1/4 right-1/4 h-80 w-80 rounded-full bg-[#d62b70]/20 blur-[130px]" />
+            </div>
+
+            {/* Poster Card Content */}
+            <div className="relative z-10 mx-auto max-w-7xl w-full">
+              {/* Transition Countdown Pill */}
+              <div className="mb-6 flex items-center justify-between">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2 rounded-full border border-[#8b5cf6]/40 bg-[#8b5cf6]/10 px-3.5 py-1.5 text-xs font-bold text-[#a78bfa] backdrop-blur-md">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#8b5cf6] opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#8b5cf6]" />
+                    </span>
+                    <span>Entering Theater Experience in {countdown}s</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setHeroPhase('theater')}
+                    className="text-xs font-semibold text-white/60 hover:text-white underline underline-offset-4 transition"
+                  >
+                    Enter Theater Mode Now →
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-8 lg:gap-12 items-center">
+                {/* Vertical Poster Card */}
+                <div className="md:col-span-5 lg:col-span-4 flex justify-center md:justify-start">
+                  <div className="group relative aspect-[2/3] w-64 sm:w-72 md:w-80 rounded-2xl overflow-hidden border border-white/15 bg-white/5 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.9)]">
+                    {details.poster_path ? (
+                      <img
+                        src={`https://image.tmdb.org/t/p/w780${details.poster_path}`}
+                        alt={title}
+                        className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center p-6 text-center text-sm font-bold text-white/40">
+                        Poster Unavailable
+                      </div>
+                    )}
+
+                    {/* Gradient Overlay */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/30 pointer-events-none" />
+
+                    {/* Rating Badge */}
+                    <div className="absolute top-3 right-3 flex items-center gap-1.5 rounded-full border border-white/20 bg-black/60 px-3 py-1 text-xs font-bold text-amber-400 backdrop-blur-md shadow-lg">
+                      <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                      <span>{Number(details.vote_average || 8.5).toFixed(1)}</span>
+                    </div>
+
+                    {/* Media Type Badge */}
+                    <div className="absolute top-3 left-3 rounded-full border border-[#8b5cf6]/30 bg-[#8b5cf6]/20 px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wider text-[#c4b5fd] backdrop-blur-md">
+                      {mediaType === 'tv' ? 'TV Series' : 'Movie'}
+                    </div>
+
+                    {/* Quick Play Trigger Hover */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (trailerKey) setIsTrailerModalOpen(true);
+                        else setHeroPhase('theater');
+                      }}
+                      className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 transition duration-300 backdrop-blur-xs"
+                    >
+                      <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-r from-[#8b5cf6] to-[#d62b70] text-white shadow-xl shadow-[#8b5cf6]/40 transition transform group-hover:scale-110">
+                        <Play className="h-7 w-7 fill-white translate-x-0.5" />
+                      </div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Poster Card Info */}
+                <div className="md:col-span-7 lg:col-span-8 flex flex-col justify-center">
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <span className="rounded-full border border-[#d62b70]/40 bg-[#d62b70]/10 px-3 py-0.5 text-[11px] font-bold uppercase tracking-wider text-[#f472b6]">
+                      {details.status || 'Now Streaming'}
+                    </span>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-white/70">
+                      4K Ultra HD
+                    </span>
+                    <span className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-white/70">
+                      Dolby Atmos
+                    </span>
+                  </div>
+
+                  <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-white leading-[1.1]">
+                    {title}
+                  </h1>
+
+                  {/* Metadata Row */}
+                  <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs sm:text-sm font-medium text-white/65">
+                    {releaseDate && <span>{releaseDate.slice(0, 4)}</span>}
+                    {details.runtime ? (
+                      <>
+                        <span>•</span>
+                        <span>{Math.floor(details.runtime / 60)}h {details.runtime % 60}m</span>
+                      </>
+                    ) : details.number_of_seasons ? (
+                      <>
+                        <span>•</span>
+                        <span>{details.number_of_seasons} Season{details.number_of_seasons > 1 ? 's' : ''}</span>
+                      </>
+                    ) : null}
+                    {details.original_language && (
+                      <>
+                        <span>•</span>
+                        <span className="uppercase">{details.original_language}</span>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Genre Pills */}
+                  {details.genres?.length > 0 && (
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      {details.genres.map((g) => (
+                        <span
+                          key={g.id}
+                          className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-white/80"
+                        >
+                          {g.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Dual Rating Badges */}
+                  <div className="mt-6 flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2">
+                      <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
+                      <div>
+                        <div className="text-xs font-extrabold text-white">
+                          ★ {Number(details.vote_average || 8.5).toFixed(1)} / 10
+                        </div>
+                        <div className="text-[10px] text-white/40">TMDB Rating</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2">
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/20 text-[10px] font-black text-emerald-400">
+                        %
+                      </div>
+                      <div>
+                        <div className="text-xs font-extrabold text-emerald-400">{tmdbAudienceScore}%</div>
+                        <div className="text-[10px] text-white/40">Audience Score</div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3.5 py-2">
+                      <div className="flex h-5 w-5 items-center justify-center rounded-full bg-[#8b5cf6]/20 text-[10px] font-black text-[#a78bfa]">
+                        ★
+                      </div>
+                      <div>
+                        <div className="text-xs font-extrabold text-[#c4b5fd]">{tmdbCriticsScore}%</div>
+                        <div className="text-[10px] text-white/40">Critics Consensus</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Synopsis Overview */}
+                  <p className="mt-5 line-clamp-3 text-sm sm:text-base leading-relaxed text-white/70">
+                    {details.overview || 'Experience this exceptional title on FLIX.'}
+                  </p>
+
+                  {/* Action Buttons */}
+                  <div className="mt-8 flex flex-wrap items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setHeroPhase('theater')}
+                      className="flex h-12 items-center gap-2.5 rounded-full bg-gradient-to-r from-[#8b5cf6] to-[#d62b70] px-6 text-sm font-bold text-white shadow-lg shadow-[#8b5cf6]/25 transition hover:brightness-110 active:scale-95"
+                    >
+                      <Play className="h-4 w-4 fill-white translate-x-0.5" />
+                      <span>Enter Theater Experience</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (trailerKey) setIsTrailerModalOpen(true);
+                        else toast.error('No trailer available');
+                      }}
+                      className="flex h-12 items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 text-sm font-semibold text-white backdrop-blur-xl transition hover:bg-white/15 active:scale-95"
+                    >
+                      <span>Watch Trailer</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleWatchlistClick}
+                      disabled={Boolean(user) && (!watchlistInitialized || watchlistLoading)}
+                      className="flex h-12 items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 text-sm font-semibold text-white backdrop-blur-xl transition hover:bg-white/15 disabled:cursor-wait active:scale-95"
+                    >
+                      {isInWatchlist ? (
+                        <BookmarkCheck className="h-4 w-4 text-[#8b5cf6]" />
+                      ) : (
+                        <Bookmark className="h-4 w-4" />
+                      )}
+                      <span>{isInWatchlist ? 'In Watchlist' : '+ Watchlist'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleFavoriteClick}
+                      className={`flex h-12 w-12 items-center justify-center rounded-full border transition active:scale-95 ${
+                        isFavorite
+                          ? 'border-[#d62b70] bg-[#d62b70]/20 text-[#d62b70]'
+                          : 'border-white/20 bg-white/5 text-white hover:bg-white/15'
+                      }`}
+                    >
+                      <Heart className={`h-4 w-4 ${isFavorite ? 'fill-[#d62b70]' : ''}`} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="theater-hero-phase"
+            initial={{ opacity: 0, scale: 1.02 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+            className="relative"
+          >
+            {/* Quick Switch to Poster Pill */}
+            <div className="absolute top-28 left-6 md:left-12 z-20">
+              <button
+                type="button"
+                onClick={() => setHeroPhase('poster')}
+                className="flex items-center gap-2 rounded-full border border-white/15 bg-black/60 px-3.5 py-1.5 text-xs font-semibold text-white/80 backdrop-blur-xl transition hover:border-white/30 hover:text-white"
+              >
+                <ImageIcon className="h-3.5 w-3.5 text-[#a78bfa]" />
+                <span>Poster View</span>
+              </button>
+            </div>
+
+            <MovieVideosHeroSection
+              key={requestKey}
+              mediaItem={{ ...details, mediaType }}
+              isFavorite={isFavorite}
+              onFavoriteClick={handleFavoriteClick}
+              onWriteReviewClick={() => setIsReviewSheetOpen(true)}
+              immediateVideo={true}
+              secondaryAction={
+                <button
+                  type="button"
+                  onClick={handleWatchlistClick}
+                  disabled={Boolean(user) && (!watchlistInitialized || watchlistLoading)}
+                  className="flex h-12 sm:h-14 items-center gap-2 rounded-full border border-white/20 bg-white/5 px-6 sm:px-7 text-sm font-semibold text-white backdrop-blur-xl transition hover:bg-white/15 disabled:cursor-wait shadow-md active:scale-95"
+                >
+                  {isInWatchlist ? (
+                    <BookmarkCheck className="h-4 w-4 text-[#8b5cf6]" />
+                  ) : (
+                    <Bookmark className="h-4 w-4" />
+                  )}
+                  <span>{isInWatchlist ? 'In Watchlist' : '+ Watchlist'}</span>
+                </button>
+              }
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Trailer Modal (accessible from Poster mode) */}
+      <TrailerModal
+        isOpen={isTrailerModalOpen}
+        onClose={() => setIsTrailerModalOpen(false)}
+        videoId={trailerKey}
+        title={`${title} Trailer`}
       />
 
       {/* 2. Two-Column Movie Info & Ratings Panel */}

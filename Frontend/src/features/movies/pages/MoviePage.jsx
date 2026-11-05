@@ -1,272 +1,373 @@
 import { useCallback, useState, useEffect } from 'react';
-import { Star, Heart } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { getGenres, discoverMovies } from '../service/movie.api.js';
-import GridCardSkeleton from '../../../components/common/GridCardSkeleton';
-import { useFavorites } from '../../favorites/hooks/useFavorites';
-import { useAuth } from '../../auth/hooks/useAuth';
-import useInfiniteScroll from '../hooks/useInfiniteScroll';
+import { useSearchParams } from 'react-router-dom';
+import {
+  Film,
+  Sparkles,
+  TrendingUp,
+  Flame,
+  Calendar,
+  Filter,
+  SlidersHorizontal,
+  ChevronDown,
+  RotateCcw,
+} from 'lucide-react';
+import {
+  getGenres,
+  discoverMovies,
+  getPopularMovies,
+  getTopRatedMovies,
+  getNowPlayingMovies,
+  getUpcomingMovies,
+} from '../service/movie.api.js';
+import MovieCard, { MovieCardSkeleton } from '../../../components/common/MovieCard.jsx';
+import { useFavorites } from '../../favorites/hooks/useFavorites.js';
+import { useAuth } from '../../auth/hooks/useAuth.js';
 import { motion } from 'framer-motion';
 
-const FavoriteMovieCard = ({ movie }) => {
-    const { isFavoriteById, addFavorite, removeFavorite } = useFavorites();
-    const { user } = useAuth();
-    const isFav = Boolean(isFavoriteById[movie.id]);
-    const navigate = useNavigate();
+const CATEGORIES = [
+  { id: 'popular', label: 'Popular', icon: Flame },
+  { id: 'top_rated', label: 'Top Rated', icon: Sparkles },
+  { id: 'now_playing', label: 'Now Playing', icon: TrendingUp },
+  { id: 'upcoming', label: 'Upcoming', icon: Calendar },
+];
 
-    const handleFavoriteClick = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        if (!user) {
-            navigate('/login');
-            return;
-        }
-        if (isFav) {
-            removeFavorite(movie.id);
-        } else {
-            addFavorite({ movieId: movie.id, movieType: 'movie', movieData: movie });
-        }
-    };
+const SORT_OPTIONS = [
+  { value: 'popularity.desc', label: 'Most Popular' },
+  { value: 'vote_average.desc', label: 'Highest Rated' },
+  { value: 'release_date.desc', label: 'Newest Releases' },
+  { value: 'title.asc', label: 'Title (A-Z)' },
+];
 
-    const handleCardClick = () => {
-        navigate(`/movie/${movie.id}`);
-    };
-
-    return (
-        <motion.div
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.3 }}
-            onClick={handleCardClick}
-            className="flex flex-col gap-2 group cursor-pointer w-full"
-        >
-            {/* Poster Image Container */}
-            <div className="relative aspect-3/4 w-full rounded-[16px] overflow-hidden bg-gray-200 dark:bg-[#222]">
-                {movie.poster ? (
-                    <img
-                        src={movie.poster}
-                        alt={movie.title}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center p-4">
-                        <span className="text-white font-medium text-center opacity-80">{movie.title}</span>
-                    </div>
-                )}
-
-                {/* Rating Badge */}
-                <div className="absolute bottom-3 left-3 bg-white/90 dark:bg-[#1A1A1A] px-2 py-1 rounded-[6px] flex items-center gap-1.5 z-10 border border-gray-200 dark:border-white/5">
-                    <Star className="w-3.5 h-3.5 fill-[#F2B01E] text-[#F2B01E]" />
-                    <span className="text-gray-900 dark:text-white text-[13px] font-bold">{movie.rating}</span>
-                </div>
-
-                {/* Heart Icon */}
-                <button
-                    onClick={handleFavoriteClick}
-                    className="absolute top-3 right-3 bg-black/50 hover:bg-black/80 backdrop-blur-md p-1.5 rounded-full text-white transition-colors z-10"
-                >
-                    <Heart className={`w-4 h-4 ${isFav ? 'fill-brand-red text-brand-red' : ''}`} />
-                </button>
-            </div>
-
-            {/* Details */}
-            <div className="flex flex-col gap-0.5 px-0.5 mt-1">
-                <h3 className="text-gray-900 dark:text-white font-bold text-[16px] truncate">{movie.title}</h3>
-                <div className="flex items-center text-[13px] text-gray-400">
-                    <span>{movie.genre}</span>
-                    <span className="mx-1.5">•</span>
-                    <span>{movie.year}</span>
-                </div>
-            </div>
-        </motion.div>
-    );
-};
+const YEARS = ['All Years', '2025', '2024', '2023', '2022', '2021', '2020', '2010s', 'Classic'];
 
 const MoviePage = () => {
-    const [movies, setMovies] = useState([]);
-    const [genres, setGenres] = useState([]);
-    const [selectedGenre, setSelectedGenre] = useState('');
-    const [loading, setLoading] = useState(true);
-    const [page, setPage] = useState(1);
-    const [hasMore, setHasMore] = useState(true);
-    const [initialLoading, setInitialLoading] = useState(true); // New state for initial loading
+  const [searchParams, setSearchParams] = useSearchParams();
+  const categoryParam = searchParams.get('category') || 'popular';
 
-    const { user } = useAuth();
-    const { fetchFavorites } = useFavorites();
+  const [activeCategory, setActiveCategory] = useState(categoryParam);
+  const [genres, setGenres] = useState([]);
+  const [selectedGenre, setSelectedGenre] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
+  const [minRating, setMinRating] = useState('');
+  const [sortBy, setSortBy] = useState('popularity.desc');
 
-    const loadMoreMovies = useCallback(() => {
-        if (!loading && hasMore) {
-            setPage(prev => prev + 1);
+  const [movies, setMovies] = useState([]);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalResults, setTotalResults] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  const { user } = useAuth();
+  const { fetchFavorites } = useFavorites();
+
+  useEffect(() => {
+    if (user) void fetchFavorites();
+  }, [fetchFavorites, user]);
+
+  // Load genres
+  useEffect(() => {
+    let active = true;
+    getGenres('movie')
+      .then(({ data }) => {
+        if (active) setGenres(data.data.genres || []);
+      })
+      .catch((err) => console.error('Error fetching genres:', err));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Sync category param
+  useEffect(() => {
+    if (categoryParam && categoryParam !== activeCategory) {
+      setActiveCategory(categoryParam);
+      setPage(1);
+    }
+  }, [categoryParam]);
+
+  // Fetch movies based on filters
+  useEffect(() => {
+    let active = true;
+    const isFirstPage = page === 1;
+    if (isFirstPage) {
+      setLoading(true);
+    } else {
+      setLoadingMore(true);
+    }
+
+    const fetchDataset = async () => {
+      try {
+        let request;
+        // If specific discovery filters applied, use discoverMovies
+        if (selectedGenre || selectedYear || minRating || sortBy !== 'popularity.desc') {
+          const params = {
+            page,
+            sort_by: sortBy,
+            ...(selectedGenre ? { with_genres: selectedGenre } : {}),
+            ...(minRating ? { 'vote_average.gte': Number(minRating) } : {}),
+            ...(selectedYear && !isNaN(selectedYear) ? { year: Number(selectedYear) } : {}),
+          };
+          request = discoverMovies(params);
+        } else {
+          // Use standard category endpoints
+          if (activeCategory === 'top_rated') {
+            request = getTopRatedMovies(page);
+          } else if (activeCategory === 'now_playing') {
+            request = getNowPlayingMovies(page);
+          } else if (activeCategory === 'upcoming') {
+            request = getUpcomingMovies(page);
+          } else {
+            request = getPopularMovies(page);
+          }
         }
-    }, [hasMore, loading]);
 
-    const loaderRef = useInfiniteScroll(loadMoreMovies, hasMore);
+        const { data } = await request;
+        if (!active) return;
+        const results = data.data.results || [];
+        const pagination = data.data.pagination || {};
 
-    useEffect(() => {
-        if (user) void fetchFavorites();
-    }, [fetchFavorites, user]);
-
-    useEffect(() => {
-        const fetchGenres = async () => {
-            try {
-                const response = await getGenres('movie');
-                setGenres(response.data.data.genres || []);
-            } catch (error) {
-                console.error("Error fetching genres:", error);
-            }
-        };
-        fetchGenres();
-    }, []);
-
-    useEffect(() => {
-        let active = true;
-        const fetchMovies = async () => {
-            if (page === 1) setLoading(true);
-            try {
-                const response = await discoverMovies({
-                    page,
-                    ...(selectedGenre ? { with_genres: selectedGenre } : {}),
-                });
-                if (!active) return;
-                const payload = response.data.data;
-                const formattedMovies = (payload.results || []).map(item => ({
-                    id: item.id,
-                    title: item.title,
-                    rating: item.vote_average ? parseFloat((item.vote_average / 2).toFixed(1)) : 'N/A',
-                    genre: 'Movie',
-                    year: (item.release_date || '').split('-')[0],
-                    poster: item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : null,
-                    media_type: 'movie' // useful for consistency
-                }));
-
-                setMovies(prev => page === 1 ? formattedMovies : [...prev, ...formattedMovies]);
-
-                if (formattedMovies.length === 0 || page >= payload.pagination.totalPages) {
-                    setHasMore(false);
-                }
-            } catch (error) {
-                if (active) console.error("Error fetching movies:", error);
-            } finally {
-                if (active) {
-                    setLoading(false);
-                    if (page === 1) setInitialLoading(false);
-                }
-            }
-        };
-
-        fetchMovies();
-        if (page === 1) window.scrollTo(0, 0);
-        return () => {
-            active = false;
-        };
-    }, [page, selectedGenre]);
-
-    const handleGenreSelect = (genreId) => {
-        setSelectedGenre(genreId);
-        setPage(1);
-        setMovies([]);
-        setHasMore(true);
-        setInitialLoading(true); // Reset initial loading when genre changes
+        setMovies((prev) => (isFirstPage ? results : [...prev, ...results]));
+        setTotalPages(pagination.totalPages || 500);
+        setTotalResults(pagination.totalResults || results.length * 10);
+      } catch (err) {
+        if (active) console.error('Error fetching movies:', err);
+      } finally {
+        if (active) {
+          setLoading(false);
+          setLoadingMore(false);
+        }
+      }
     };
 
-    // Removed handleShuffle as it's no longer used in the new UI
+    fetchDataset();
+    if (isFirstPage) window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    return (
-        <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4 }}
-            className="min-h-screen bg-white dark:bg-bg-dark text-gray-900 dark:text-white pt-32 pb-24 transition-colors duration-300"
-        >
-            <div className="max-w-[1440px] mx-auto px-6 lg:px-12">
+    return () => {
+      active = false;
+    };
+  }, [activeCategory, minRating, page, selectedGenre, selectedYear, sortBy]);
 
-                {/* Header Section */}
-                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12 border-b border-white/10 pb-8">
-                    <motion.div
-                        initial={{ x: -20, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        transition={{ delay: 0.2 }}
-                    >
-                        <h1 className="text-4xl md:text-5xl font-black tracking-tight mb-2">MOVIES</h1>
-                        <p className="text-gray-400 font-medium">Explore the world of cinema with our curated collection.</p>
-                    </motion.div>
+  const handleCategoryChange = (catId) => {
+    setActiveCategory(catId);
+    setSearchParams({ category: catId });
+    setSelectedGenre('');
+    setSelectedYear('');
+    setMinRating('');
+    setSortBy('popularity.desc');
+    setPage(1);
+  };
 
-                    <motion.div
-                        initial={{ x: 20, opacity: 0 }}
-                        animate={{ x: 0, opacity: 1 }}
-                        transition={{ delay: 0.3 }}
-                        className="flex items-center gap-3 bg-white/5 border border-white/10 px-4 py-2 rounded-full cursor-default"
-                    >
-                        <div className="w-2 h-2 rounded-full bg-brand-red animate-pulse"></div>
-                        <span className="text-sm font-bold text-gray-300 uppercase tracking-wider">
-                            {initialLoading ? 'Loading Catalog...' : `${movies.length} TITLES AVAILABLE`}
-                        </span>
-                    </motion.div>
-                </div>
+  const handleResetFilters = () => {
+    setSelectedGenre('');
+    setSelectedYear('');
+    setMinRating('');
+    setSortBy('popularity.desc');
+    setPage(1);
+  };
 
-                {/* Genre Filter */}
-                <div className="flex flex-wrap gap-3 mb-12">
-                    <motion.button
-                        key="all-genres"
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.1 }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleGenreSelect('')}
-                        className={`px-4 md:px-6 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-bold transition-all cursor-pointer ${selectedGenre === ''
-                            ? 'bg-brand-red text-white shadow-lg shadow-brand-red/20'
-                            : 'bg-[#1A1A1A] text-gray-400 hover:bg-[#222] hover:text-white border border-white/5'
-                            }`}
-                    >
-                        All
-                    </motion.button>
-                    {genres.map((genre, index) => (
-                        <motion.button
-                            key={genre.id}
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.1 + (index + 1) * 0.05 }} // Adjust delay for "All" button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => handleGenreSelect(genre.id)}
-                            className={`px-4 md:px-6 py-2 md:py-2.5 rounded-full text-xs md:text-sm font-bold transition-all cursor-pointer ${selectedGenre === genre.id
-                                ? 'bg-brand-red text-white shadow-lg shadow-brand-red/20'
-                                : 'bg-gray-100 dark:bg-[#1A1A1A] text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-[#222] hover:text-gray-900 dark:hover:text-white border border-gray-200 dark:border-white/5'
-                                }`}
-                        >
-                            {genre.name}
-                        </motion.button>
-                    ))}
-                </div>
+  const hasActiveFilters = Boolean(
+    selectedGenre || selectedYear || minRating || sortBy !== 'popularity.desc'
+  );
 
-                {/* Favorites Grid */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-5 gap-y-10">
-                    {movies.map((movie, index) => (
-                        <FavoriteMovieCard key={`${movie.id}-${index}`} movie={movie} />
-                    ))}
-
-                    {/* First page loader */}
-                    {loading && page === 1 && [...Array(10)].map((_, i) => (
-                        <GridCardSkeleton key={i} />
-                    ))}
-                </div>
-
-                {/* Loading State for "Load More" */}
-                {loading && page > 1 && (
-                    <div className="flex justify-center mt-12 py-10">
-                        <div className="w-10 h-10 border-4 border-brand-red/20 border-t-brand-red rounded-full animate-spin"></div>
-                    </div>
-                )}
-
-                {/* Infinite Scroll Trigger */}
-                {hasMore && !initialLoading && (
-                    <div ref={loaderRef} className="h-20 w-full flex items-center justify-center mt-4">
-                        {!loading && <div className="w-2 h-2 rounded-full bg-brand-red/40 animate-bounce"></div>}
-                    </div>
-                )}
+  return (
+    <motion.main
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.35 }}
+      className="min-h-screen bg-[#090909] text-white pt-24 md:pt-28 pb-20"
+    >
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 border-b border-white/10 pb-6">
+          <div>
+            <div className="flex items-center gap-2.5 text-[#8b5cf6] text-xs font-bold uppercase tracking-[0.25em] mb-2">
+              <Film className="h-4 w-4" />
+              <span>Cinema & Theatrical Catalog</span>
             </div>
-        </motion.div>
-    );
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tight text-white">
+              Explore Movies
+            </h1>
+            <p className="mt-2 text-sm sm:text-base text-white/60 max-w-xl">
+              Discover blockbuster cinematic releases, cult classics, and award-winning masterpieces in 4K HDR.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 self-start md:self-auto">
+            <span className="rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-semibold text-white/70">
+              {totalResults ? `${totalResults.toLocaleString()} Titles` : 'Extensive Catalog'}
+            </span>
+          </div>
+        </div>
+
+        {/* Category Preset Pills */}
+        <div className="flex flex-wrap items-center gap-2 mb-6">
+          {CATEGORIES.map(({ id, label, icon: Icon }) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => handleCategoryChange(id)}
+              className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                activeCategory === id && !hasActiveFilters
+                  ? 'bg-gradient-to-r from-[#8b5cf6] to-[#d62b70] text-white shadow-[0_4px_20px_-2px_rgba(139,92,246,0.45)]'
+                  : 'border border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              <span>{label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Filter and Sort Toolbar */}
+        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4 mb-8 flex flex-wrap items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Genre Dropdown */}
+            <div className="relative">
+              <select
+                value={selectedGenre}
+                onChange={(e) => {
+                  setSelectedGenre(e.target.value);
+                  setPage(1);
+                }}
+                className="appearance-none rounded-xl border border-white/10 bg-[#141416] px-4 py-2 pr-9 text-xs font-bold text-white outline-none focus:border-[#8b5cf6] cursor-pointer"
+              >
+                <option value="">All Genres</option>
+                {genres.map((g) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/50" />
+            </div>
+
+            {/* Year Selector */}
+            <div className="relative">
+              <select
+                value={selectedYear}
+                onChange={(e) => {
+                  setSelectedYear(e.target.value);
+                  setPage(1);
+                }}
+                className="appearance-none rounded-xl border border-white/10 bg-[#141416] px-4 py-2 pr-9 text-xs font-bold text-white outline-none focus:border-[#8b5cf6] cursor-pointer"
+              >
+                {YEARS.map((y) => (
+                  <option key={y} value={y === 'All Years' ? '' : y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/50" />
+            </div>
+
+            {/* Minimum Rating */}
+            <div className="relative">
+              <select
+                value={minRating}
+                onChange={(e) => {
+                  setMinRating(e.target.value);
+                  setPage(1);
+                }}
+                className="appearance-none rounded-xl border border-white/10 bg-[#141416] px-4 py-2 pr-9 text-xs font-bold text-white outline-none focus:border-[#8b5cf6] cursor-pointer"
+              >
+                <option value="">Any Rating</option>
+                <option value="8">★ 8.0+ Exceptional</option>
+                <option value="7">★ 7.0+ Recommended</option>
+                <option value="6">★ 6.0+ Good</option>
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/50" />
+            </div>
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={handleResetFilters}
+                className="flex items-center gap-1.5 text-xs text-[#d62b70] hover:underline font-semibold"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Reset Filters</span>
+              </button>
+            )}
+          </div>
+
+          {/* Sort By Dropdown */}
+          <div className="flex items-center gap-2">
+            <SlidersHorizontal className="h-3.5 w-3.5 text-white/40" />
+            <span className="text-xs text-white/50 font-semibold hidden sm:inline">Sort:</span>
+            <div className="relative">
+              <select
+                value={sortBy}
+                onChange={(e) => {
+                  setSortBy(e.target.value);
+                  setPage(1);
+                }}
+                className="appearance-none rounded-xl border border-white/10 bg-[#141416] px-4 py-2 pr-9 text-xs font-bold text-white outline-none focus:border-[#8b5cf6] cursor-pointer"
+              >
+                {SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/50" />
+            </div>
+          </div>
+        </div>
+
+        {/* Movie Cards Grid (2 cols mobile -> 6 cols desktop) */}
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5">
+            {Array.from({ length: 18 }).map((_, i) => (
+              <MovieCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : movies.length ? (
+          <>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-5">
+              {movies.map((movie) => (
+                <MovieCard key={movie.id} item={movie} mediaType="movie" />
+              ))}
+            </div>
+
+            {/* Load More Button */}
+            {page < totalPages && (
+              <div className="mt-12 flex justify-center">
+                <button
+                  type="button"
+                  onClick={() => setPage((prev) => prev + 1)}
+                  disabled={loadingMore}
+                  className="group flex items-center gap-3 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 px-8 py-3.5 text-sm font-bold text-white shadow-xl transition-all hover:scale-105 active:scale-95 disabled:opacity-60 cursor-pointer"
+                >
+                  {loadingMore ? (
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  ) : (
+                    <span className="h-2 w-2 rounded-full bg-[#8b5cf6] group-hover:bg-[#d62b70] transition-colors" />
+                  )}
+                  <span>{loadingMore ? 'Loading titles...' : 'Load More Movies'}</span>
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-24 text-center rounded-3xl border border-white/10 bg-white/[0.02]">
+            <Film className="h-12 w-12 text-white/30 mb-3" />
+            <h3 className="text-xl font-bold text-white">No Movies Match Your Filter</h3>
+            <p className="mt-1 text-sm text-white/50 max-w-sm">
+              Try adjusting your genres, release year, or rating thresholds to discover more titles.
+            </p>
+            <button
+              type="button"
+              onClick={handleResetFilters}
+              className="mt-5 rounded-full bg-gradient-to-r from-[#8b5cf6] to-[#d62b70] px-6 py-2.5 text-xs font-bold text-white shadow-lg"
+            >
+              Reset Filters
+            </button>
+          </div>
+        )}
+      </div>
+    </motion.main>
+  );
 };
 
 export default MoviePage;
