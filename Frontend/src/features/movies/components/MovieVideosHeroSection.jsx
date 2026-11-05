@@ -22,6 +22,8 @@ const MovieVideosHeroSection = ({
   onWriteReviewClick,
   onFavoriteClick,
   isFavorite = false,
+  immediateVideo = false,
+  onSwitchToPoster,
 }) => {
   const { trending, trendingTV } = useSelector((state) => state.movies);
   const trendingItems = useMemo(
@@ -116,12 +118,19 @@ const MovieVideosHeroSection = ({
   useEffect(() => {
     if (!movie || !trailerVideoId) return;
 
+    if (immediateVideo) {
+      const immediateTimer = setTimeout(() => {
+        setVisibleTrailerId(trailerVideoId);
+      }, 400);
+      return () => clearTimeout(immediateTimer);
+    }
+
     const timer = setTimeout(() => {
       setVisibleTrailerId(trailerVideoId);
     }, 3500);
 
     return () => clearTimeout(timer);
-  }, [movie, trailerVideoId]);
+  }, [immediateVideo, movie, trailerVideoId]);
 
   // Initialize YT Player instance when iframe is mounted
   useEffect(() => {
