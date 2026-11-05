@@ -37,6 +37,7 @@ export const routes = createBrowserRouter([
       { path: 'movie/:id', element: <MovieTvDetails /> },
       { path: 'tv/:id', element: <MovieTvDetails /> },
       { path: 'search', element: <SearchResults /> },
+      // { path: 'admin', element: <AdminPage /> },
       {
         element: <ProtectedRoute />,
         children: [
@@ -60,8 +61,8 @@ export const routes = createBrowserRouter([
       {
         element: <AuthLayout />,
         children: [
-          { path: 'login',           element: <Login /> },
-          { path: 'signup',          element: <Signup /> },
+          { path: 'login', element: <Login /> },
+          { path: 'signup', element: <Signup /> },
           { path: 'forgot-password', element: <ForgotPassword /> },
         ],
       },
@@ -74,7 +75,7 @@ export const routes = createBrowserRouter([
   {
     element: <AuthLayout />,
     children: [
-      { path: 'verify-otp',            element: <VerifyOtp /> },
+      { path: 'verify-otp', element: <VerifyOtp /> },
       { path: 'reset-password/:token', element: <ResetPassword /> },
     ],
   },
