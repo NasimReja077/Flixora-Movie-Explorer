@@ -44,23 +44,33 @@ const App = () => {
         toastOptions={{
           duration: 4000,
           style: {
-            background: "#111827",
-            color: "#f9fafb",
-            border: "1px solid rgba(148, 163, 184, 0.2)",
-            borderRadius: "12px",
+            background: "#121212",
+            color: "#ffffff",
+            border: "1px solid rgba(255, 255, 255, 0.12)",
+            borderRadius: "16px",
             fontSize: "13px",
-            boxShadow: "0 10px 25px rgba(15, 23, 42, 0.2)",
+            fontWeight: "500",
+            boxShadow: "0 20px 50px rgba(0, 0, 0, 0.85)",
+            backdropFilter: "blur(20px)",
           },
           success: {
             style: {
-              background: "#0f172a",
-              border: "1px solid rgba(34, 197, 94, 0.4)",
+              background: "#121212",
+              border: "1px solid rgba(139, 92, 246, 0.5)",
+            },
+            iconTheme: {
+              primary: "#8b5cf6",
+              secondary: "#ffffff",
             },
           },
           error: {
             style: {
-              background: "#111827",
-              border: "1px solid rgba(239, 68, 68, 0.4)",
+              background: "#121212",
+              border: "1px solid rgba(214, 43, 112, 0.5)",
+            },
+            iconTheme: {
+              primary: "#d62b70",
+              secondary: "#ffffff",
             },
           },
         }}
