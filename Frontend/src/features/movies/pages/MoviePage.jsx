@@ -23,31 +23,17 @@ import MovieCard, { MovieCardSkeleton } from '../../../components/common/MovieCa
 import { useFavorites } from '../../favorites/hooks/useFavorites.js';
 import { useAuth } from '../../auth/hooks/useAuth.js';
 import { motion } from 'framer-motion';
+import { LANGUAGE_OPTIONS } from '../languages.js';
 
 const CATEGORIES = [
   { id: 'popular', label: 'Popular', icon: Flame },
   { id: 'top_rated', label: 'Top Rated', icon: Sparkles },
   { id: 'now_playing', label: 'Now In Theaters', icon: TrendingUp },
   { id: 'upcoming', label: 'Upcoming', icon: Calendar },
+  { id: 'cult_classics', label: 'Cult Classics', icon: Flame },
 ];
 
-const LANGUAGES = [
-  { value: 'en', label: 'English' },
-  { value: 'hi', label: 'Hindi' },
-  { value: 'es', label: 'Spanish' },
-  { value: 'fr', label: 'French' },
-  { value: 'ja', label: 'Japanese' },
-  { value: 'ko', label: 'Korean' },
-  { value: 'zh', label: 'Chinese' },
-  { value: 'ta', label: 'Tamil' },
-  { value: 'te', label: 'Telugu' },
-  { value: 'ml', label: 'Malayalam' },
-  { value: 'ar', label: 'Arabic' },
-  { value: 'de', label: 'German' },
-  { value: 'it', label: 'Italian' },
-  { value: 'pt', label: 'Portuguese' },
-  { value: 'ru', label: 'Russian' },
-];
+const CULT_CLASSIC_GENRES = '27|878|53';
 
 const SORT_OPTIONS = [
   { value: 'popularity.desc', label: 'Most Popular' },
@@ -119,14 +105,30 @@ const MoviePage = () => {
       try {
         let request;
         // If specific discovery filters applied, use discoverMovies
-        if (selectedGenre || selectedYear || selectedLanguage || minRating || sortBy !== 'popularity.desc') {
+        if (
+          selectedGenre ||
+          selectedYear ||
+          selectedLanguage ||
+          minRating ||
+          sortBy !== 'popularity.desc' ||
+          activeCategory === 'cult_classics'
+        ) {
           const today = new Date();
           const theatricalStart = new Date(today);
           theatricalStart.setDate(today.getDate() - 60);
           const params = {
             page,
             sort_by: sortBy,
-            ...(selectedGenre ? { with_genres: selectedGenre } : {}),
+            ...(activeCategory === 'cult_classics'
+              ? {
+                  with_genres: selectedGenre
+                    ? `${CULT_CLASSIC_GENRES},${selectedGenre}`
+                    : CULT_CLASSIC_GENRES,
+                  'release_date.lte': '1999-12-31',
+                }
+              : selectedGenre
+                ? { with_genres: selectedGenre }
+                : {}),
             ...(selectedLanguage ? { with_original_language: selectedLanguage } : {}),
             ...(minRating ? { 'vote_average.gte': Number(minRating) } : {}),
             ...(selectedYear && !isNaN(selectedYear) ? { year: Number(selectedYear) } : {}),
@@ -222,7 +224,7 @@ const MoviePage = () => {
               Explore Movies
             </h1>
             <p className="mt-2 text-sm sm:text-base text-white/60 max-w-xl">
-              Discover blockbuster cinematic releases, cult classics, and award-winning masterpieces in 4K HDR.
+              Discover blockbuster releases, cult classics, and highly rated cinematic favorites.
             </p>
           </div>
 
@@ -306,7 +308,7 @@ const MoviePage = () => {
                 className="appearance-none rounded-xl border border-white/10 bg-[#141416] px-4 py-2 pr-9 text-xs font-bold text-white outline-none focus:border-[#8b5cf6] cursor-pointer"
               >
                 <option value="">All Languages</option>
-                {LANGUAGES.map((language) => (
+                {LANGUAGE_OPTIONS.map((language) => (
                   <option key={language.value} value={language.value}>
                     {language.label}
                   </option>
