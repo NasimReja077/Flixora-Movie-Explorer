@@ -12,6 +12,7 @@ import ContentRow from '../../../components/common/ContentRow';
 import {
   discoverMovies,
   discoverTVShows,
+  getNowPlayingMovies,
   getPopularMovies,
   getPopularTVShows,
   getTopRatedMovies,
@@ -34,6 +35,7 @@ const Home = () => {
     let active = true;
     const requests = [
       ['trending', 'Trending Now', () => getTrendingMedia('all', 'day')],
+      ['nowPlayingMovies', 'Now in Theaters', () => getNowPlayingMovies()],
       ['popularMovies', 'Popular Movies', () => getPopularMovies()],
       ['topRatedMovies', 'Top Rated Movies', () => getTopRatedMovies()],
       ['popularTv', 'Popular TV Shows', () => getPopularTVShows()],
@@ -113,6 +115,15 @@ const Home = () => {
           isLoading={!rows.trending}
           isError={rows.trending?.isError}
           seeAllLink="/movies?category=popular"
+        />
+
+        <ContentRow
+          title="🎟️ Now In Theaters"
+          items={rows.nowPlayingMovies?.items}
+          isLoading={!rows.nowPlayingMovies}
+          isError={rows.nowPlayingMovies?.isError}
+          mediaType="movie"
+          seeAllLink="/movies?category=now_playing"
         />
 
         <ContentRow
