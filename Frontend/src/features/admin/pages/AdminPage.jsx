@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import {
   Activity,
   Ban,
+  Clock,
   Film,
   Pencil,
   Plus,
@@ -12,10 +13,9 @@ import {
   Search,
   CloudDownload,
   Star,
-  CheckCircle,
   AlertTriangle,
   Zap,
-  Radio,
+  RefreshCw,
   SlidersHorizontal,
 } from "lucide-react";
 import { useAdmin } from "../hooks/useAdmin.js";
@@ -57,6 +57,7 @@ const AdminPage = () => {
     deleteAdminMovie,
     fetchAdminUsers,
     toggleUserBan,
+    toggleUserRole,
     deleteAdminUser,
     fetchAdminStats,
     clearAdminError,
@@ -205,6 +206,25 @@ const AdminPage = () => {
     }
   };
 
+  const handlePromoteUser = async (user) => {
+    if (!window.confirm(`Give ${user.email} administrator access?`)) return;
+    try {
+      await toggleUserRole(user._id).unwrap();
+      toast.success(`${user.username || user.email} is now an admin`);
+    } catch {
+      toast.error("Could not update user role");
+    }
+  };
+
+  const handleRefreshOverview = async () => {
+    try {
+      await fetchAdminStats().unwrap();
+      toast.success("Overview refreshed");
+    } catch {
+      toast.error("Could not refresh the overview");
+    }
+  };
+
   const handleDeleteUser = async (user) => {
     if (!window.confirm(`Delete the account for ${user.email}? This cannot be undone.`)) return;
     try {
@@ -236,7 +256,7 @@ const AdminPage = () => {
         const { data } = await searchTMDB(tmdbQuery.trim());
         setTmdbSearchResults(data.data?.results || []);
       }
-    } catch (err) {
+    } catch {
       toast.error("TMDB search query failed");
     } finally {
       setTmdbSearching(false);
@@ -295,34 +315,37 @@ const AdminPage = () => {
   return (
     <main className="min-h-screen bg-[#090909] text-white">
       <div className="mx-auto max-w-7xl px-5 pb-20 pt-10 sm:px-8 lg:px-10">
-        {/* Platform Control Telemetry Header */}
+        {/* Admin dashboard header */}
         <header className="mb-8 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
           <div>
             <div className="mb-2 flex items-center gap-2 text-[#8b5cf6] text-xs font-bold uppercase tracking-[0.24em]">
-              <span className="h-2 w-2 rounded-full bg-[#fbbf24] animate-pulse" />
-              Cluster Node: US-EAST-STREAM-04 • Sync v4.18.2
+              <ShieldCheck className="h-4 w-4" />
+              Flixora administration
             </div>
-            <h1 className="text-3xl font-black tracking-tight sm:text-5xl">
-              Executive Telemetry & Platform Ops
-            </h1>
+            <h1 className="text-3xl font-black tracking-tight sm:text-5xl">Admin Overview</h1>
             <p className="mt-2 max-w-xl text-sm leading-6 text-white/55">
-              Direct TMDB synchronizer, catalog distribution state, user permissions, and reviews moderation.
+              A live snapshot of your catalog and community, with shortcuts to common admin tasks.
             </p>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
             <button
               type="button"
+              onClick={handleRefreshOverview}
+              disabled={loading}
+              className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-semibold text-white/75 transition hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
+            <button
+              type="button"
               onClick={() => setIsTmdbModalOpen(true)}
               className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[#8b5cf6] to-[#d62b70] px-5 py-2.5 text-sm font-bold text-white shadow-lg transition hover:scale-105 active:scale-95 cursor-pointer"
             >
               <CloudDownload className="h-4 w-4" />
-              <span>+ Add Movie (TMDB)</span>
+              <span>Add title from TMDB</span>
             </button>
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-2 text-xs font-semibold text-emerald-200">
-              <ShieldCheck className="h-4 w-4" />
-              Superadmin Mode
-            </div>
           </div>
         </header>
 
@@ -344,105 +367,27 @@ const AdminPage = () => {
           </div>
         )}
 
-        {/* SECTION 1: KPI Stats Matrix */}
-        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-          {/* Card 1: Total Movies */}
-          <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 flex flex-col justify-between shadow-xl">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-white/50">
-                Catalog Inventory
-              </span>
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#8b5cf6]/15 text-[#8b5cf6]">
-                <Film className="h-4 w-4" />
-              </span>
-            </div>
-            <div className="mt-4">
-              <div className="text-3xl font-black text-white">
-                {stats?.totalMovies != null ? Number(stats.totalMovies).toLocaleString() : "12,480"}
-              </div>
-              <div className="mt-1 flex items-center gap-1.5 text-xs text-[#8b5cf6]">
-                <span className="font-bold">+124</span>
-                <span className="text-white/45">indexed this cycle</span>
-              </div>
-            </div>
-            <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-              <div className="h-full rounded-full bg-[#8b5cf6]" style={{ width: "78%" }} />
-            </div>
-          </div>
-
-          {/* Card 2: Active Users */}
-          <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 flex flex-col justify-between shadow-xl">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-white/50">
-                Active Streamers
-              </span>
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#d62b70]/15 text-[#d62b70]">
-                <Users className="h-4 w-4" />
-              </span>
-            </div>
-            <div className="mt-4">
-              <div className="text-3xl font-black text-white">
-                {stats?.totalUsers != null ? Number(stats.totalUsers).toLocaleString() : "84,210"}
-              </div>
-              <div className="mt-1 flex items-center gap-1.5 text-xs text-[#d62b70]">
-                <span className="font-bold">+12%</span>
-                <span className="text-white/45">MoM expansion</span>
-              </div>
-            </div>
-            <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-              <div className="h-full rounded-full bg-[#d62b70]" style={{ width: "84%" }} />
-            </div>
-          </div>
-
-          {/* Card 3: Total Reviews */}
-          <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 flex flex-col justify-between shadow-xl">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-white/50">
-                Audience Reviews
-              </span>
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#fbbf24]/15 text-[#fbbf24]">
-                <Activity className="h-4 w-4" />
-              </span>
-            </div>
-            <div className="mt-4">
-              <div className="text-3xl font-black text-white">
-                {stats?.totalReviews != null ? Number(stats.totalReviews).toLocaleString() : "34,920"}
-              </div>
-              <div className="mt-1 flex items-center gap-1.5 text-xs">
-                <span className="rounded bg-[#fbbf24]/20 px-2 py-0.5 text-[10px] font-bold text-[#fbbf24]">
-                  98 Pending
+        {/* Live platform metrics */}
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {[
+            { label: "Catalog titles", value: stats?.totalMovies, description: "Titles in the managed catalog", icon: Film, color: "text-[#a78bfa]", background: "bg-[#8b5cf6]/15" },
+            { label: "Registered accounts", value: stats?.totalUsers, description: "Member accounts", icon: Users, color: "text-pink-300", background: "bg-[#d62b70]/15" },
+            { label: "Community reviews", value: stats?.totalReviews, description: "Reviews submitted by members", icon: Activity, color: "text-amber-300", background: "bg-amber-400/15" },
+            { label: "Watch history", value: stats?.totalWatchHistory, description: "Recorded viewing entries", icon: Clock, color: "text-sky-300", background: "bg-sky-400/15" },
+          ].map(({ label, value, description, icon: Icon, color, background }) => (
+            <article key={label} className="rounded-2xl border border-white/10 bg-white/[0.035] p-5 shadow-lg">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xs font-bold uppercase tracking-wider text-white/55">{label}</h2>
+                <span className={`flex h-10 w-10 items-center justify-center rounded-xl ${background} ${color}`}>
+                  <Icon className="h-4 w-4" />
                 </span>
-                <span className="text-white/45">awaiting mod</span>
               </div>
-            </div>
-            <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-              <div className="h-full rounded-full bg-[#fbbf24]" style={{ width: "62%" }} />
-            </div>
-          </div>
-
-          {/* Card 4: Bandwidth / Quality */}
-          <div className="rounded-3xl border border-white/10 bg-white/[0.035] p-5 flex flex-col justify-between shadow-xl">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-white/50">
-                Throughput / QoE
-              </span>
-              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-sky-400/15 text-sky-400">
-                <Radio className="h-4 w-4" />
-              </span>
-            </div>
-            <div className="mt-4">
-              <div className="text-3xl font-black text-white">
-                4.8 <span className="text-sm font-normal text-white/50">Pbps</span>
-              </div>
-              <div className="mt-1 flex items-center gap-1.5 text-xs text-sky-400">
-                <span className="font-bold">99.98%</span>
-                <span className="text-white/45">optimal buffer health</span>
-              </div>
-            </div>
-            <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-white/5">
-              <div className="h-full rounded-full bg-sky-400" style={{ width: "95%" }} />
-            </div>
-          </div>
+              <p className="mt-5 text-3xl font-black text-white">
+                {value == null ? (loading ? "…" : "—") : Number(value).toLocaleString()}
+              </p>
+              <p className="mt-1 text-xs text-white/45">{description}</p>
+            </article>
+          ))}
         </div>
 
         {/* Navigation Tabs */}
@@ -467,25 +412,67 @@ const AdminPage = () => {
         {/* TAB 1: OVERVIEW */}
         {activeTab === "overview" && (
           <section aria-label="Dashboard overview" className="space-y-8">
-            <div className="grid gap-5 lg:grid-cols-2">
+            <div className="grid gap-5 lg:grid-cols-3">
               <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 shadow-xl">
-                <h2 className="mb-5 text-lg font-bold flex items-center gap-2">
-                  <Film className="h-5 w-5 text-[#8b5cf6]" /> Most Streamed Titles
+                <h2 className="mb-1 flex items-center gap-2 text-lg font-bold">
+                  <Film className="h-5 w-5 text-[#8b5cf6]" /> Most Watched Titles
                 </h2>
+                <p className="mb-5 text-xs text-white/45">Ranked by recorded watch history</p>
                 <RankedTitles items={stats?.mostViewed} />
               </section>
               <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 shadow-xl">
-                <h2 className="mb-5 text-lg font-bold flex items-center gap-2">
+                <h2 className="mb-1 flex items-center gap-2 text-lg font-bold">
                   <Star className="h-5 w-5 text-[#fbbf24]" /> Most Favorited
                 </h2>
+                <p className="mb-5 text-xs text-white/45">Titles saved by members</p>
                 <RankedTitles items={stats?.mostFavorited} />
+              </section>
+              <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 shadow-xl">
+                <h2 className="mb-1 flex items-center gap-2 text-lg font-bold">
+                  <SlidersHorizontal className="h-5 w-5 text-[#d62b70]" /> Quick Actions
+                </h2>
+                <p className="mb-5 text-xs text-white/45">Jump to a common admin task</p>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsTmdbModalOpen(true)}
+                    className="flex w-full items-center justify-between rounded-xl border border-white/5 bg-black/20 px-4 py-3 text-left text-sm font-semibold text-white/80 transition hover:border-[#8b5cf6]/30 hover:bg-white/5 hover:text-white"
+                  >
+                    <span className="flex items-center gap-3"><CloudDownload className="h-4 w-4 text-[#a78bfa]" /> Add a title from TMDB</span>
+                    <span aria-hidden="true">→</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("movies")}
+                    className="flex w-full items-center justify-between rounded-xl border border-white/5 bg-black/20 px-4 py-3 text-left text-sm font-semibold text-white/80 transition hover:border-[#8b5cf6]/30 hover:bg-white/5 hover:text-white"
+                  >
+                    <span className="flex items-center gap-3"><Film className="h-4 w-4 text-[#a78bfa]" /> Manage catalog</span>
+                    <span aria-hidden="true">→</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("users")}
+                    className="flex w-full items-center justify-between rounded-xl border border-white/5 bg-black/20 px-4 py-3 text-left text-sm font-semibold text-white/80 transition hover:border-[#d62b70]/30 hover:bg-white/5 hover:text-white"
+                  >
+                    <span className="flex items-center gap-3"><Users className="h-4 w-4 text-pink-300" /> Manage members</span>
+                    <span aria-hidden="true">→</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab("reviews")}
+                    className="flex w-full items-center justify-between rounded-xl border border-white/5 bg-black/20 px-4 py-3 text-left text-sm font-semibold text-white/80 transition hover:border-amber-400/30 hover:bg-white/5 hover:text-white"
+                  >
+                    <span className="flex items-center gap-3"><AlertTriangle className="h-4 w-4 text-amber-300" /> Review moderation</span>
+                    <span aria-hidden="true">→</span>
+                  </button>
+                </div>
               </section>
             </div>
 
             <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 shadow-xl">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-lg font-bold flex items-center gap-2">
-                  <Users className="h-5 w-5 text-[#d62b70]" /> Recent Member Ingests
+                  <Users className="h-5 w-5 text-[#d62b70]" /> Recent Sign-ups
                 </h2>
                 <button
                   type="button"
@@ -509,6 +496,9 @@ const AdminPage = () => {
                         <p className="truncate text-sm font-semibold">{u.username || "Member"}</p>
                       </div>
                       <p className="truncate text-xs text-white/45">{u.email}</p>
+                      <p className="mt-2 text-[11px] text-white/35">
+                        Joined {u.createdAt ? new Date(u.createdAt).toLocaleDateString() : "date unavailable"}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -933,6 +923,16 @@ const AdminPage = () => {
                             <button
                               type="button"
                               disabled={loading}
+                              onClick={() => handlePromoteUser(u)}
+                              aria-label={`Promote ${u.email} to admin`}
+                              className="inline-flex items-center gap-1.5 rounded-lg border border-[#8b5cf6]/30 px-2.5 py-1.5 text-xs font-semibold text-[#d0bcff] transition hover:bg-[#8b5cf6]/15 disabled:opacity-50"
+                            >
+                              <ShieldCheck className="h-3.5 w-3.5" />
+                              Make Admin
+                            </button>
+                            <button
+                              type="button"
+                              disabled={loading}
                               onClick={() => handleToggleBan(u)}
                               className="inline-flex items-center gap-1.5 rounded-lg border border-amber-400/20 px-2.5 py-1.5 text-xs font-semibold text-amber-100 transition hover:bg-amber-400/10 disabled:opacity-50"
                             >
@@ -1086,7 +1086,7 @@ const RankedTitles = ({ items }) => {
           <span className="min-w-0 flex-1 truncate text-sm font-medium">
             {item.movieData?.title || item.movieData?.name || `TMDB title ${item._id}`}
           </span>
-          <span className="shrink-0 text-xs font-semibold text-white/45">{item.count} plays</span>
+          <span className="shrink-0 text-xs font-semibold text-white/45">{item.count} entries</span>
         </li>
       ))}
     </ol>

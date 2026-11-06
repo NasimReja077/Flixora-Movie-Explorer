@@ -221,10 +221,11 @@ export const promoteUser = async (req, res, next) => {
 // @access  Private/Admin
 export const getDashboardStats = async (req, res, next) => {
   try {
-    const [totalUsers, totalMovies, totalReviews, mostFavorited, mostViewed, recentUsers] = await Promise.all([
+    const [totalUsers, totalMovies, totalReviews, totalWatchHistory, mostFavorited, mostViewed, recentUsers] = await Promise.all([
       User.countDocuments(),
       Movie.countDocuments(),
       Review.countDocuments(),
+      WatchHistory.countDocuments(),
       Favorite.aggregate([
         { $group: { _id: '$movieId', count: { $sum: 1 }, movieData: { $first: '$movieData' } } },
         { $sort: { count: -1 } },
@@ -243,6 +244,7 @@ export const getDashboardStats = async (req, res, next) => {
         totalUsers,
         totalMovies,
         totalReviews,
+        totalWatchHistory,
         mostFavorited,
         mostViewed,
         recentUsers,
