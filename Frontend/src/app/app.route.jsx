@@ -14,6 +14,7 @@ import MoviePage from '../features/movies/pages/MoviePage.jsx';
 import TvShowPage from '../features/movies/pages/TvShowPage.jsx';
 import MovieTvDetails from '../features/movies/pages/MovieTvDetails.jsx';
 import SearchResults from '../features/movies/pages/SearchResults.jsx';
+import FranchisesPage from '../features/movies/pages/FranchisesPage.jsx';
 import FavoritesPage from '../features/favorites/pages/FavoritesPage.jsx';
 import WatchlistPage from '../features/watchlist/pages/WatchlistPage.jsx';
 import HistoryPage from '../features/history/pages/HistoryPage.jsx';
@@ -34,6 +35,7 @@ export const routes = createBrowserRouter([
       { path: 'movies', element: <MoviePage /> },
       { path: 'tv', element: <TvShowPage /> },
       { path: 'genres', element: <GenreExplorer /> },
+      { path: 'franchises', element: <FranchisesPage /> },
       { path: 'movie/:id', element: <MovieTvDetails /> },
       { path: 'tv/:id', element: <MovieTvDetails /> },
       { path: 'search', element: <SearchResults /> },

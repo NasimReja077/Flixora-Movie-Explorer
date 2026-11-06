@@ -22,7 +22,7 @@ const AppLayout = () => {
   const contentSpacing =
     pathname === '/'
       ? ''
-      : pathname === '/genres' || pathname === '/search' || pathname === '/favorites' || pathname === '/watchlist' || pathname === '/history' || pathname === '/profile' || pathname === '/admin'
+      : pathname === '/genres' || pathname === '/franchises' || pathname === '/search' || pathname === '/favorites' || pathname === '/watchlist' || pathname === '/history' || pathname === '/profile' || pathname === '/admin'
         ? 'pt-16'
         : '';
 

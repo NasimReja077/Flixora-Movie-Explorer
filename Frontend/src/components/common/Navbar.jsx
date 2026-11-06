@@ -14,6 +14,7 @@ import {
   LogOut,
   ChevronDown,
   Tags,
+  Layers3,
   UserCircle2,
   ShieldCheck,
   Sparkles,
@@ -30,6 +31,7 @@ const PRIMARY_NAV = [
   { to: '/movies', label: 'Movies', icon: Film },
   { to: '/tv', label: 'TV Shows', icon: Tv },
   { to: '/genres', label: 'Genres', icon: Tags },
+  { to: '/franchises', label: 'Franchises', icon: Layers3 },
 ];
 
 export default function Navbar() {
