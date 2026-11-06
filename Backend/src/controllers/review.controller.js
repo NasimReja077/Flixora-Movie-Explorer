@@ -7,12 +7,13 @@ import ApiResponse from '../utils/ApiResponse.js';
 // @access  Private
 export const createReview = async (req, res, next) => {
   try {
-    const { movieId, movieType, rating, content, spoiler } = req.body;
+    const { movieId, movieType = 'movie', rating, content, spoiler } = req.body;
 
     // Check if user already reviewed
     const existingReview = await Review.findOne({
       user: req.user.id,
       movieId,
+      movieType,
     });
 
     if (existingReview) {
@@ -124,23 +125,25 @@ export const deleteReview = async (req, res, next) => {
 export const getMovieReviews = async (req, res, next) => {
   try {
     const { movieId } = req.params;
+    const movieType = req.query.movieType || 'movie';
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
     const parsedMovieId = parseInt(movieId);
 
-    const reviews = await Review.find({ movieId: parsedMovieId })
+    const reviewFilter = { movieId: parsedMovieId, movieType };
+    const reviews = await Review.find(reviewFilter)
       .populate('user', 'name avatar')
       .sort('-createdAt')
       .skip(skip)
       .limit(limit);
 
-    const total = await Review.countDocuments({ movieId: parsedMovieId })
+    const total = await Review.countDocuments(reviewFilter);
 
     // Calculate average rating
     const avgRating = await Review.aggregate([
-      { $match: { movieId: parseInt(movieId) } },
+      { $match: reviewFilter },
       { $group: { _id: null, avgRating: { $avg: '$rating' } } },
     ]);
     // const totalAvgRating = avgRating[0]?.avg || 0;

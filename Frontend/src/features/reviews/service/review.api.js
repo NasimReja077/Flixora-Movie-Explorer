@@ -2,9 +2,9 @@ import api from "../../Shared/services/api.js";
 
 
 // ─── Reviews ──────────────────────────────────────────────────────────────────
-export const getReviews = (movieId, page = 1) =>
+export const getReviews = (movieId, page = 1, movieType = "movie") =>
   api
-    .get(`/reviews/movie/${movieId}`, { params: { page } })
+    .get(`/reviews/movie/${movieId}`, { params: { page, movieType } })
     .then((r) => r.data.data);
 
 export const createReview = (movieId, data) =>

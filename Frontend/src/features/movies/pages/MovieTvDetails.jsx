@@ -159,10 +159,10 @@ const MovieTvDetails = () => {
   useEffect(() => {
     let active = true;
     setLoadingReviews(true);
-    getLocalReviews(id)
+    getLocalReviews(id, 1, mediaType)
       .then((data) => {
-        if (active && Array.isArray(data)) {
-          setCommunityReviews(data);
+        if (active && Array.isArray(data?.reviews)) {
+          setCommunityReviews(data.reviews);
         }
       })
       .catch(() => {
@@ -175,7 +175,7 @@ const MovieTvDetails = () => {
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, mediaType]);
 
   const isCurrentResult = result.key === requestKey;
   const details = isCurrentResult ? result.details : null;
@@ -304,7 +304,7 @@ const MovieTvDetails = () => {
         ? `**${reviewHeadline.trim()}**\n\n${reviewContent.trim()}`
         : reviewContent.trim();
 
-      const created = await createReview(Number(id), {
+      const { review: created } = await createReview(Number(id), {
         rating: reviewScore,
         content: fullContent,
         spoiler: reviewContainsSpoiler,
@@ -406,7 +406,7 @@ const MovieTvDetails = () => {
   const allReviews = [
     ...communityReviews.map((r) => ({
       id: r._id,
-      author: r.user?.username || r.user?.fullname || 'FLIX Cinephile',
+      author: r.user?.name || r.user?.username || 'FLIX Cinephile',
       author_details: { rating: r.rating },
       created_at: r.createdAt,
       content: r.content,

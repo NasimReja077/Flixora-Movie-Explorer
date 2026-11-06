@@ -1,4 +1,4 @@
-import { body, param } from 'express-validator';
+import { body, param, query } from 'express-validator';
 
 export const createReviewValidator = [
   body('movieId')
@@ -13,8 +13,8 @@ export const createReviewValidator = [
   body('rating')
     .notEmpty()
     .withMessage('Rating is required')
-    .isFloat({ min: 0, max: 10 })
-    .withMessage('Rating must be between 0 and 10'),
+    .isFloat({ min: 1, max: 10 })
+    .withMessage('Rating must be between 1 and 10'),
   body('content')
     .trim()
     .notEmpty()
@@ -53,4 +53,8 @@ export const movieIdValidator = [
     .isNumeric()
     .withMessage('Movie ID must be a number')
     .toInt(),
+  query('movieType')
+    .optional()
+    .isIn(['movie', 'tv'])
+    .withMessage('Movie type must be either "movie" or "tv"'),
 ];
