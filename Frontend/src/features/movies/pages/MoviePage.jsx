@@ -27,8 +27,26 @@ import { motion } from 'framer-motion';
 const CATEGORIES = [
   { id: 'popular', label: 'Popular', icon: Flame },
   { id: 'top_rated', label: 'Top Rated', icon: Sparkles },
-  { id: 'now_playing', label: 'Now Playing', icon: TrendingUp },
+  { id: 'now_playing', label: 'Now In Theaters', icon: TrendingUp },
   { id: 'upcoming', label: 'Upcoming', icon: Calendar },
+];
+
+const LANGUAGES = [
+  { value: 'en', label: 'English' },
+  { value: 'hi', label: 'Hindi' },
+  { value: 'es', label: 'Spanish' },
+  { value: 'fr', label: 'French' },
+  { value: 'ja', label: 'Japanese' },
+  { value: 'ko', label: 'Korean' },
+  { value: 'zh', label: 'Chinese' },
+  { value: 'ta', label: 'Tamil' },
+  { value: 'te', label: 'Telugu' },
+  { value: 'ml', label: 'Malayalam' },
+  { value: 'ar', label: 'Arabic' },
+  { value: 'de', label: 'German' },
+  { value: 'it', label: 'Italian' },
+  { value: 'pt', label: 'Portuguese' },
+  { value: 'ru', label: 'Russian' },
 ];
 
 const SORT_OPTIONS = [
@@ -48,6 +66,7 @@ const MoviePage = () => {
   const [genres, setGenres] = useState([]);
   const [selectedGenre, setSelectedGenre] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState('');
   const [minRating, setMinRating] = useState('');
   const [sortBy, setSortBy] = useState('popularity.desc');
 
@@ -100,13 +119,25 @@ const MoviePage = () => {
       try {
         let request;
         // If specific discovery filters applied, use discoverMovies
-        if (selectedGenre || selectedYear || minRating || sortBy !== 'popularity.desc') {
+        if (selectedGenre || selectedYear || selectedLanguage || minRating || sortBy !== 'popularity.desc') {
+          const today = new Date();
+          const theatricalStart = new Date(today);
+          theatricalStart.setDate(today.getDate() - 60);
           const params = {
             page,
             sort_by: sortBy,
             ...(selectedGenre ? { with_genres: selectedGenre } : {}),
+            ...(selectedLanguage ? { with_original_language: selectedLanguage } : {}),
             ...(minRating ? { 'vote_average.gte': Number(minRating) } : {}),
             ...(selectedYear && !isNaN(selectedYear) ? { year: Number(selectedYear) } : {}),
+            ...(activeCategory === 'now_playing'
+              ? {
+                  'release_date.gte': theatricalStart.toISOString().slice(0, 10),
+                  'release_date.lte': today.toISOString().slice(0, 10),
+                  with_release_type: '2|3',
+                  region: 'US',
+                }
+              : {}),
           };
           request = discoverMovies(params);
         } else {
@@ -146,13 +177,14 @@ const MoviePage = () => {
     return () => {
       active = false;
     };
-  }, [activeCategory, minRating, page, selectedGenre, selectedYear, sortBy]);
+  }, [activeCategory, minRating, page, selectedGenre, selectedLanguage, selectedYear, sortBy]);
 
   const handleCategoryChange = (catId) => {
     setActiveCategory(catId);
     setSearchParams({ category: catId });
     setSelectedGenre('');
     setSelectedYear('');
+    setSelectedLanguage('');
     setMinRating('');
     setSortBy('popularity.desc');
     setPage(1);
@@ -161,13 +193,14 @@ const MoviePage = () => {
   const handleResetFilters = () => {
     setSelectedGenre('');
     setSelectedYear('');
+    setSelectedLanguage('');
     setMinRating('');
     setSortBy('popularity.desc');
     setPage(1);
   };
 
   const hasActiveFilters = Boolean(
-    selectedGenre || selectedYear || minRating || sortBy !== 'popularity.desc'
+    selectedGenre || selectedYear || selectedLanguage || minRating || sortBy !== 'popularity.desc'
   );
 
   return (
@@ -255,6 +288,27 @@ const MoviePage = () => {
                 {YEARS.map((y) => (
                   <option key={y} value={y === 'All Years' ? '' : y}>
                     {y}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/50" />
+            </div>
+
+            {/* Original Language */}
+            <div className="relative">
+              <select
+                value={selectedLanguage}
+                onChange={(e) => {
+                  setSelectedLanguage(e.target.value);
+                  setPage(1);
+                }}
+                aria-label="Filter by language"
+                className="appearance-none rounded-xl border border-white/10 bg-[#141416] px-4 py-2 pr-9 text-xs font-bold text-white outline-none focus:border-[#8b5cf6] cursor-pointer"
+              >
+                <option value="">All Languages</option>
+                {LANGUAGES.map((language) => (
+                  <option key={language.value} value={language.value}>
+                    {language.label}
                   </option>
                 ))}
               </select>
@@ -354,7 +408,7 @@ const MoviePage = () => {
             <Film className="h-12 w-12 text-white/30 mb-3" />
             <h3 className="text-xl font-bold text-white">No Movies Match Your Filter</h3>
             <p className="mt-1 text-sm text-white/50 max-w-sm">
-              Try adjusting your genres, release year, or rating thresholds to discover more titles.
+              Try adjusting your genre, release year, language, or rating filters to discover more titles.
             </p>
             <button
               type="button"
