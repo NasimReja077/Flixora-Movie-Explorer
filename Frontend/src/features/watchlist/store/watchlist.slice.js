@@ -92,12 +92,21 @@ const watchlistSlice = createSlice({
       .addCase(addToWatchlist.fulfilled, (state, action) => {
         state.loading = false;
         const watchlistItem = action.payload.item;
+        const alreadyInList = state.items.some(
+          (item) => String(item.movieId) === String(watchlistItem.movieId)
+        );
         state.items = [
           watchlistItem,
           ...state.items.filter(
-            (item) => item.movieId !== watchlistItem.movieId
+            (item) => String(item.movieId) !== String(watchlistItem.movieId)
           ),
         ];
+        if (!alreadyInList && state.pagination) {
+          state.pagination.total += 1;
+          state.pagination.pages = Math.ceil(
+            state.pagination.total / state.pagination.limit
+          );
+        }
         state.isInWatchlistById[watchlistItem.movieId] = true;
       })
       .addCase(addToWatchlist.rejected, (state, action) => {
@@ -113,6 +122,12 @@ const watchlistSlice = createSlice({
         state.items = state.items.filter(
           (item) => String(item.movieId) !== String(action.payload)
         );
+        if (state.pagination) {
+          state.pagination.total = Math.max(0, state.pagination.total - 1);
+          state.pagination.pages = Math.ceil(
+            state.pagination.total / state.pagination.limit
+          );
+        }
         state.isInWatchlistById[action.payload] = false;
       })
       .addCase(removeFromWatchlist.rejected, (state, action) => {

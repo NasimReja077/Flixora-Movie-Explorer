@@ -8,22 +8,18 @@ import {
   Mail,
   ShieldCheck,
   Star,
-  UserCircle2,
   Camera,
   SlidersHorizontal,
   Share2,
   Bookmark,
-  Activity,
-  KeyRound,
   Sparkles,
   Lock,
-  ArrowRight,
-  ExternalLink,
 } from "lucide-react";
 import { useAuth } from "../../auth/hooks/useAuth.js";
 import { useProfile } from "../hooks/useProfile.js";
 import { useWatchlist } from "../../watchlist/hooks/useWatchlist.js";
 import { useFavorites } from "../../favorites/hooks/useFavorites.js";
+import { useReviews } from "../../reviews/hooks/useReviews.js";
 import { updateProfile, updatePassword, uploadAvatar } from "../service/profile.api.js";
 import Sheet from "../../../components/common/Sheet.jsx";
 import MovieCard from "../../../components/common/MovieCard.jsx";
@@ -55,13 +51,28 @@ const ProfilePage = () => {
   const { user, setUser } = useAuth();
   const {
     profile,
-    loading,
     error,
     fetchCurrentProfile,
     setCurrentProfileUser,
   } = useProfile();
-  const { items: watchlistItems } = useWatchlist();
-  const { items: favoriteItems } = useFavorites();
+  const {
+    items: watchlistItems,
+    pagination: watchlistPagination,
+    loading: watchlistLoading,
+    error: watchlistError,
+  } = useWatchlist();
+  const {
+    items: favoriteItems,
+    fetchFavorites,
+    loading: favoritesLoading,
+    error: favoritesError,
+  } = useFavorites();
+  const {
+    myReviews,
+    fetchMyReviews,
+    loading: reviewsLoading,
+    error: reviewsError,
+  } = useReviews();
 
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -77,7 +88,9 @@ const ProfilePage = () => {
 
   useEffect(() => {
     fetchCurrentProfile();
-  }, [fetchCurrentProfile]);
+    fetchFavorites();
+    fetchMyReviews();
+  }, [fetchCurrentProfile, fetchFavorites, fetchMyReviews]);
 
   const profileUser = useMemo(() => {
     return profile?.user || user || {};
@@ -89,17 +102,16 @@ const ProfilePage = () => {
     }
   }, [profileUser]);
 
-  const stats = profile?.stats || {
-    favorites: favoriteItems?.length || 27,
-    reviews: 18,
-    watchHistory: 142,
-  };
+  const watchlistCount = watchlistPagination?.total ?? watchlistItems.length;
+  const favoritesCount = favoriteItems.length;
+  const reviewsCount = myReviews.length;
+  const watchHistoryCount = profile?.stats?.watchHistory ?? 0;
+  const latestReview = myReviews[0];
 
   const displayName =
     profileUser.username || profileUser.fullname || profileUser.name || "Alex Vance";
   const email = profileUser.email || "alex.vance@cinema.flix";
   const joinedAt = profileUser.createdAt || user?.createdAt;
-  const role = profileUser.role || "user";
   const avatar = profileUser.avatar;
 
   const handleAvatarChange = async (e) => {
@@ -163,6 +175,11 @@ const ProfilePage = () => {
 
   return (
     <main className="min-h-screen bg-[#090909] text-white">
+      {error && (
+        <div role="alert" className="mx-auto max-w-7xl px-5 pt-4 text-sm text-red-200 sm:px-8 lg:px-10">
+          Could not load your profile: {error}
+        </div>
+      )}
       {/* Background Ambient Glows */}
       <div className="relative w-full overflow-hidden">
         <div className="pointer-events-none absolute -top-32 left-1/4 h-96 w-96 rounded-full bg-[#8b5cf6]/15 blur-[128px]" />
@@ -278,7 +295,7 @@ const ProfilePage = () => {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-2xl font-black text-white">
-                    {watchlistItems?.length || 48}
+                    {watchlistCount}
                   </span>
                   <span className="text-[11px] font-bold uppercase tracking-wider text-white/45">
                     Watchlist
@@ -292,7 +309,7 @@ const ProfilePage = () => {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-2xl font-black text-white">
-                    {favoriteItems?.length || 27}
+                    {favoritesCount}
                   </span>
                   <span className="text-[11px] font-bold uppercase tracking-wider text-white/45">
                     Favorites
@@ -306,7 +323,7 @@ const ProfilePage = () => {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-2xl font-black text-white">
-                    {stats.reviews || 18}
+                    {reviewsCount}
                   </span>
                   <span className="text-[11px] font-bold uppercase tracking-wider text-white/45">
                     Reviews Written
@@ -320,7 +337,7 @@ const ProfilePage = () => {
                 </div>
                 <div className="flex flex-col">
                   <span className="text-2xl font-black text-white">
-                    {stats.watchHistory || 142}
+                    {watchHistoryCount}
                   </span>
                   <span className="text-[11px] font-bold uppercase tracking-wider text-white/45">
                     Titles Watched
@@ -337,9 +354,9 @@ const ProfilePage = () => {
             <nav className="flex items-center gap-2">
               {[
                 { id: "overview", label: "Overview" },
-                { id: "watchlist", label: `Watchlist (${watchlistItems?.length || 48})` },
-                { id: "favorites", label: `Favorites (${favoriteItems?.length || 27})` },
-                { id: "reviews", label: "My Reviews (18)" },
+                { id: "watchlist", label: `Watchlist (${watchlistCount})` },
+                { id: "favorites", label: `Favorites (${favoritesCount})` },
+                { id: "reviews", label: `My Reviews (${reviewsCount})` },
                 { id: "security", label: "Security & Access" },
               ].map((tab) => (
                 <button
@@ -475,50 +492,46 @@ const ProfilePage = () => {
                       onClick={() => setActiveTab("reviews")}
                       className="text-xs font-bold text-[#8b5cf6] hover:underline"
                     >
-                      View All Reviews (18) →
+                      View All Reviews ({reviewsCount}) →
                     </button>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-5 rounded-2xl bg-black/30 p-5 border border-white/5">
-                    <div className="h-36 w-24 shrink-0 overflow-hidden rounded-xl bg-white/5 shadow-md">
-                      <img
-                        src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?q=80&w=300&auto=format&fit=crop"
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    </div>
-                    <div className="flex flex-col justify-between flex-1 gap-2">
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <h4 className="font-bold text-white text-base">Chronos Continuum</h4>
-                          <span className="text-xs text-white/50">2024 • Speculative Sci-Fi</span>
-                        </div>
-                        <div className="flex items-center gap-1 rounded-full bg-[#fbbf24]/20 border border-[#fbbf24]/30 px-3 py-1 text-xs font-bold text-[#fbbf24]">
+                  {reviewsLoading ? (
+                    <p className="rounded-2xl border border-white/5 bg-black/30 p-5 text-sm text-white/55">
+                      Loading your reviews...
+                    </p>
+                  ) : reviewsError ? (
+                    <p role="alert" className="rounded-2xl border border-red-400/20 bg-red-400/5 p-5 text-sm text-red-200">
+                      Could not load your reviews: {reviewsError}
+                    </p>
+                  ) : latestReview ? (
+                    <div className="rounded-2xl border border-white/5 bg-black/30 p-5">
+                      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                        <Link
+                          to={`/${latestReview.movieType === "tv" ? "tv" : "movie"}/${latestReview.movieId}`}
+                          className="font-bold text-white hover:text-[#a78bfa]"
+                        >
+                          Review for {latestReview.movieType === "tv" ? "TV" : "movie"} #{latestReview.movieId}
+                        </Link>
+                        <span className="flex items-center gap-1 rounded-full border border-[#fbbf24]/30 bg-[#fbbf24]/20 px-3 py-1 text-xs font-bold text-[#fbbf24]">
                           <Star className="h-3.5 w-3.5 fill-current" />
-                          <span>9.5 / 10</span>
-                        </div>
+                          {latestReview.rating} / 10
+                        </span>
                       </div>
-
-                      <p className="text-sm leading-relaxed text-white/80 italic">
-                        "The sound design alone warrants an IMAX reference system. The acoustic sub-bass transients throughout the second act sequence redefine spatial immersion on FLIX. Color timing holds absolute deep blacks without macroblocking."
+                      <p className="text-sm leading-relaxed text-white/80">
+                        {latestReview.content}
                       </p>
-
-                      <div className="flex items-center justify-between text-xs text-white/45 pt-2 border-t border-white/5">
-                        <span>Published 4 days ago</span>
-                        <span className="text-[#8b5cf6] font-semibold">142 Found Helpful</span>
-                      </div>
+                      <p className="mt-3 border-t border-white/5 pt-2 text-xs text-white/45">
+                        {latestReview.createdAt
+                          ? `Published ${new Date(latestReview.createdAt).toLocaleDateString()}`
+                          : "Publication date unavailable"}
+                      </p>
                     </div>
-                  </div>
-
-                  {/* Hardware calibration band */}
-                  <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl bg-white/[0.02] px-4 py-3 text-xs text-white/50">
-                    <span>
-                      Hardware Linked: <strong className="text-white">Apple TV 4K / LG OLED G3 / Dolby Atmos 7.1.4</strong>
-                    </span>
-                    <span className="text-[#6ee7b7] flex items-center gap-1 font-semibold">
-                      <CheckCircle2 className="h-3.5 w-3.5" /> Calibrated Mode Active
-                    </span>
-                  </div>
+                  ) : (
+                    <p className="rounded-2xl border border-white/5 bg-black/30 p-5 text-sm text-white/55">
+                      You have not written any reviews yet.
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -533,11 +546,19 @@ const ProfilePage = () => {
                   Browse Catalog →
                 </Link>
               </div>
+              {watchlistError && (
+                <p role="alert" className="text-sm text-red-200">
+                  Could not load your watchlist: {watchlistError}
+                </p>
+              )}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {watchlistItems?.map((item) => (
                   <MovieCard key={item._id || item.id} item={item} />
                 ))}
               </div>
+              {!watchlistLoading && !watchlistError && watchlistItems.length === 0 && (
+                <p className="text-sm text-white/55">Your watchlist is empty.</p>
+              )}
             </div>
           )}
 
@@ -550,52 +571,67 @@ const ProfilePage = () => {
                   Discover More →
                 </Link>
               </div>
+              {favoritesError && (
+                <p role="alert" className="text-sm text-red-200">
+                  Could not load your favorites: {favoritesError}
+                </p>
+              )}
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                 {favoriteItems?.map((item) => (
                   <MovieCard key={item._id || item.id} item={item} />
                 ))}
               </div>
+              {!favoritesLoading && !favoritesError && favoriteItems.length === 0 && (
+                <p className="text-sm text-white/55">You have not saved any favorites yet.</p>
+              )}
             </div>
           )}
 
           {/* TAB 4: MY REVIEWS */}
           {activeTab === "reviews" && (
             <div className="space-y-6">
-              <h2 className="text-2xl font-bold">Your Published Critiques (18)</h2>
+              <h2 className="text-2xl font-bold">Your Reviews ({reviewsCount})</h2>
+              {reviewsError && (
+                <p role="alert" className="text-sm text-red-200">
+                  Could not load your reviews: {reviewsError}
+                </p>
+              )}
               <div className="grid gap-4 sm:grid-cols-2">
-                {[
-                  {
-                    title: "Chronos Continuum",
-                    score: "9.5/10",
-                    date: "4 days ago",
-                    text: "The sound design alone warrants an IMAX reference system. The acoustic sub-bass transients throughout the second act sequence redefine spatial immersion.",
-                  },
-                  {
-                    title: "Vesper Mirage",
-                    score: "8.0/10",
-                    date: "Nov 12, 2024",
-                    text: "Exceptional anamorphic framing and moody twilight lighting. Denis Miller delivers a contemplative sci-fi treatise.",
-                  },
-                ].map((critique, idx) => (
+                {myReviews.map((review) => (
                   <div
-                    key={idx}
+                    key={review._id || review.id}
                     className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 shadow-xl flex flex-col justify-between gap-3"
                   >
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-bold text-white text-base">{critique.title}</h3>
+                        <Link
+                          to={`/${review.movieType === "tv" ? "tv" : "movie"}/${review.movieId}`}
+                          className="font-bold text-white text-base hover:text-[#a78bfa]"
+                        >
+                          {review.movieType === "tv" ? "TV" : "Movie"} #{review.movieId}
+                        </Link>
                         <span className="rounded-full bg-[#fbbf24]/20 text-[#fbbf24] px-2.5 py-0.5 text-xs font-bold">
-                          ★ {critique.score}
+                          ★ {review.rating}/10
                         </span>
                       </div>
                       <p className="text-sm leading-relaxed text-white/70 italic">
-                        "{critique.text}"
+                        {review.content}
                       </p>
                     </div>
-                    <span className="text-xs text-white/40">{critique.date}</span>
+                    <span className="text-xs text-white/40">
+                      {review.createdAt
+                        ? new Date(review.createdAt).toLocaleDateString()
+                        : "Date unavailable"}
+                    </span>
                   </div>
                 ))}
               </div>
+              {reviewsLoading && (
+                <p className="text-sm text-white/55">Loading your reviews...</p>
+              )}
+              {!reviewsLoading && !reviewsError && myReviews.length === 0 && (
+                <p className="text-sm text-white/55">You have not written any reviews yet.</p>
+              )}
             </div>
           )}
 
