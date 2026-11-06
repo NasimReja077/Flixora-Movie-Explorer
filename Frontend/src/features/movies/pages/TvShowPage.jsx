@@ -5,6 +5,7 @@ import {
   Sparkles,
   Flame,
   Calendar,
+  Play,
   SlidersHorizontal,
   ChevronDown,
   RotateCcw,
@@ -19,11 +20,17 @@ import MovieCard, { MovieCardSkeleton } from '../../../components/common/MovieCa
 import { useFavorites } from '../../favorites/hooks/useFavorites.js';
 import { useAuth } from '../../auth/hooks/useAuth.js';
 import { motion } from 'framer-motion';
+import { LANGUAGE_OPTIONS } from '../languages.js';
 
 const CATEGORIES = [
   { id: 'popular', label: 'Popular Series', icon: Flame },
   { id: 'top_rated', label: 'Top Rated Series', icon: Sparkles },
+  { id: 'now_streaming', label: 'Now In Streaming', icon: Play },
+  { id: 'upcoming', label: 'Upcoming', icon: Calendar },
+  { id: 'cult_classics', label: 'Cult Classics', icon: Flame },
 ];
+
+const CULT_CLASSIC_GENRES = '9648|10765';
 
 const SORT_OPTIONS = [
   { value: 'popularity.desc', label: 'Most Popular' },
@@ -41,6 +48,7 @@ const TvShowPage = () => {
   const [genres, setGenres] = useState([]);
   const [selectedGenre, setSelectedGenre] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState('');
   const [minRating, setMinRating] = useState('');
   const [sortBy, setSortBy] = useState('popularity.desc');
 
@@ -92,13 +100,38 @@ const TvShowPage = () => {
     const fetchDataset = async () => {
       try {
         let request;
-        if (selectedGenre || selectedYear || minRating || sortBy !== 'popularity.desc') {
+        if (
+          selectedGenre ||
+          selectedYear ||
+          selectedLanguage ||
+          minRating ||
+          sortBy !== 'popularity.desc' ||
+          ['now_streaming', 'upcoming', 'cult_classics'].includes(activeCategory)
+        ) {
+          const today = new Date().toISOString().slice(0, 10);
           const params = {
             page,
-            sort_by: sortBy,
-            ...(selectedGenre ? { with_genres: selectedGenre } : {}),
+            sort_by: activeCategory === 'upcoming' ? 'first_air_date.asc' : sortBy,
+            ...(activeCategory === 'cult_classics'
+              ? {
+                  with_genres: selectedGenre
+                    ? `${CULT_CLASSIC_GENRES},${selectedGenre}`
+                    : CULT_CLASSIC_GENRES,
+                  'first_air_date.lte': '1999-12-31',
+                }
+              : selectedGenre
+                ? { with_genres: selectedGenre }
+                : {}),
             ...(minRating ? { 'vote_average.gte': Number(minRating) } : {}),
             ...(selectedYear && !isNaN(selectedYear) ? { first_air_date_year: Number(selectedYear) } : {}),
+            ...(selectedLanguage ? { with_original_language: selectedLanguage } : {}),
+            ...(activeCategory === 'upcoming' ? { 'first_air_date.gte': today } : {}),
+            ...(activeCategory === 'now_streaming'
+              ? {
+                  watch_region: 'US',
+                  with_watch_monetization_types: 'flatrate|free|ads',
+                }
+              : {}),
           };
           request = discoverTVShows(params);
         } else {
@@ -133,13 +166,14 @@ const TvShowPage = () => {
     return () => {
       active = false;
     };
-  }, [activeCategory, minRating, page, selectedGenre, selectedYear, sortBy]);
+  }, [activeCategory, minRating, page, selectedGenre, selectedLanguage, selectedYear, sortBy]);
 
   const handleCategoryChange = (catId) => {
     setActiveCategory(catId);
     setSearchParams({ category: catId });
     setSelectedGenre('');
     setSelectedYear('');
+    setSelectedLanguage('');
     setMinRating('');
     setSortBy('popularity.desc');
     setPage(1);
@@ -148,13 +182,14 @@ const TvShowPage = () => {
   const handleResetFilters = () => {
     setSelectedGenre('');
     setSelectedYear('');
+    setSelectedLanguage('');
     setMinRating('');
     setSortBy('popularity.desc');
     setPage(1);
   };
 
   const hasActiveFilters = Boolean(
-    selectedGenre || selectedYear || minRating || sortBy !== 'popularity.desc'
+    selectedGenre || selectedYear || selectedLanguage || minRating || sortBy !== 'popularity.desc'
   );
 
   return (
@@ -242,6 +277,27 @@ const TvShowPage = () => {
                 {YEARS.map((y) => (
                   <option key={y} value={y === 'All Years' ? '' : y}>
                     {y}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/50" />
+            </div>
+
+            {/* Original Language */}
+            <div className="relative">
+              <select
+                value={selectedLanguage}
+                onChange={(e) => {
+                  setSelectedLanguage(e.target.value);
+                  setPage(1);
+                }}
+                aria-label="Filter by language"
+                className="appearance-none rounded-xl border border-white/10 bg-[#141416] px-4 py-2 pr-9 text-xs font-bold text-white outline-none focus:border-[#8b5cf6] cursor-pointer"
+              >
+                <option value="">All Languages</option>
+                {LANGUAGE_OPTIONS.map((language) => (
+                  <option key={language.value} value={language.value}>
+                    {language.label}
                   </option>
                 ))}
               </select>
@@ -341,7 +397,7 @@ const TvShowPage = () => {
             <Tv className="h-12 w-12 text-white/30 mb-3" />
             <h3 className="text-xl font-bold text-white">No Series Match Your Filter</h3>
             <p className="mt-1 text-sm text-white/50 max-w-sm">
-              Try adjusting your genres, broadcast year, or minimum rating to explore more series.
+              Try adjusting your genre, broadcast year, language, or rating filters to explore more series.
             </p>
             <button
               type="button"
