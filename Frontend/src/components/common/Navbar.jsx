@@ -194,28 +194,6 @@ export default function Navbar() {
               </NavLink>
             ))}
 
-            {/* Watchlist Quick Pill */}
-            {isAuthenticated && (
-              <NavLink
-                to="/watchlist"
-                className={({ isActive }) =>
-                  `relative flex items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-bold tracking-wide transition duration-200 ${
-                    isActive
-                      ? 'bg-white/10 text-white'
-                      : 'text-white/60 hover:bg-white/5 hover:text-white'
-                  }`
-                }
-              >
-                <Bookmark className="h-3.5 w-3.5 text-white/50" />
-                <span>Watchlist</span>
-                {watchlistItems?.length > 0 && (
-                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-[#8b5cf6] px-1 text-[10px] font-black text-white">
-                    {watchlistItems.length}
-                  </span>
-                )}
-              </NavLink>
-            )}
-
             {/* Admin Quick Pill if Admin */}
             {isAdmin && (
               <NavLink
