@@ -1,4 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useGSAP } from "@gsap/react";
+import gsap from "gsap";
 import {
   Activity,
   Ban,
@@ -63,6 +65,7 @@ const AdminPage = () => {
     clearAdminError,
   } = useAdmin();
 
+  const tabContentRef = useRef(null);
   const [activeTab, setActiveTab] = useState("overview");
   const [moviePage, setMoviePage] = useState(1);
   const [userPage, setUserPage] = useState(1);
@@ -115,6 +118,28 @@ const AdminPage = () => {
       date: "2 days ago",
     },
   ]);
+
+  useGSAP(
+    () => {
+      if (!tabContentRef.current) return;
+
+      const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (prefersReducedMotion) {
+        gsap.set(".admin-tab-panel", { clearProps: "all" });
+        return;
+      }
+
+      const panel = tabContentRef.current.querySelector(`[data-tab="${activeTab}"]`);
+      if (!panel) return;
+
+      gsap.fromTo(
+        panel,
+        { autoAlpha: 0, x: 18, y: 12 },
+        { autoAlpha: 1, x: 0, y: 0, duration: 0.45, ease: "power2.out" }
+      );
+    },
+    { dependencies: [activeTab] }
+  );
 
   useEffect(() => {
     fetchAdminStats();
@@ -409,9 +434,10 @@ const AdminPage = () => {
           ))}
         </nav>
 
-        {/* TAB 1: OVERVIEW */}
-        {activeTab === "overview" && (
-          <section aria-label="Dashboard overview" className="space-y-8">
+        <div ref={tabContentRef}>
+          {/* TAB 1: OVERVIEW */}
+          {activeTab === "overview" && (
+            <section data-tab="overview" aria-label="Dashboard overview" className="admin-tab-panel space-y-8">
             <div className="grid gap-5 lg:grid-cols-3">
               <section className="rounded-3xl border border-white/10 bg-white/[0.035] p-6 shadow-xl">
                 <h2 className="mb-1 flex items-center gap-2 text-lg font-bold">
@@ -513,7 +539,7 @@ const AdminPage = () => {
 
         {/* TAB 2: CATALOG MANAGER */}
         {activeTab === "movies" && (
-          <section className="space-y-6">
+          <section data-tab="movies" className="admin-tab-panel space-y-6">
             {/* Title Add / Edit Form */}
             <form
               onSubmit={handleMovieSubmit}
@@ -756,7 +782,7 @@ const AdminPage = () => {
 
         {/* TAB 3: REVIEWS MODERATION */}
         {activeTab === "reviews" && (
-          <section className="space-y-6">
+          <section data-tab="reviews" className="admin-tab-panel space-y-6">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-xl font-bold">Reviews Moderation Queue</h2>
@@ -853,7 +879,7 @@ const AdminPage = () => {
 
         {/* TAB 4: USERS & TIERS */}
         {activeTab === "users" && (
-          <section className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035] shadow-xl">
+          <section data-tab="users" className="admin-tab-panel overflow-hidden rounded-3xl border border-white/10 bg-white/[0.035] shadow-xl">
             <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
               <div>
                 <h2 className="font-bold">Member Accounts & Access Tiers</h2>
@@ -1056,6 +1082,7 @@ const AdminPage = () => {
           </div>
         </div>
       )}
+        </div>
     </main>
   );
 };
