@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useGSAP } from '@gsap/react';
+import gsap from 'gsap';
 import {
   FiBookmark,
   FiChevronLeft,
@@ -12,12 +14,54 @@ import { getTrendingMedia } from '../../features/movies/service/movie.api.js';
 import { useAuth } from '../../features/auth/hooks/useAuth';
 
 const HeroSlider = () => {
+  const sliderRef = useRef(null);
   const { isAuthenticated } = useAuth();
   const [trendingItems, setTrendingItems] = useState([]);
   const [activeSlide, setActiveSlide] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isError, setIsError] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
+
+  useGSAP(
+    () => {
+      if (!sliderRef.current || trendingItems.length === 0) return;
+
+      const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReducedMotion) {
+        gsap.set('.hero-slide', { clearProps: 'all' });
+        gsap.set('.hero-copy', { clearProps: 'all' });
+        return;
+      }
+
+      const activeSlideEl = sliderRef.current.querySelectorAll('.hero-slide')[activeSlide];
+      if (!activeSlideEl) return;
+
+      gsap.fromTo(
+        activeSlideEl,
+        { autoAlpha: 0, x: 38, scale: 1.03 },
+        { autoAlpha: 1, x: 0, scale: 1, duration: 0.8, ease: 'power3.inOut' }
+      );
+
+      const copy = activeSlideEl.querySelector('.hero-copy');
+      if (copy) {
+        gsap.fromTo(
+          copy,
+          { autoAlpha: 0, y: 24 },
+          { autoAlpha: 1, y: 0, duration: 0.7, ease: 'power3.out' }
+        );
+      }
+
+      const backdrop = activeSlideEl.querySelector('.hero-backdrop');
+      if (backdrop) {
+        gsap.fromTo(
+          backdrop,
+          { scale: 1.08 },
+          { scale: 1, duration: 1.1, ease: 'power2.out' }
+        );
+      }
+    },
+    { dependencies: [activeSlide, trendingItems.length] }
+  );
 
   useEffect(() => {
     let active = true;
@@ -65,6 +109,7 @@ const HeroSlider = () => {
 
   return (
     <section
+      ref={sliderRef}
       aria-label="Featured titles"
       className="hero-slider relative left-1/2 isolate h-[78svh] min-h-[560px] w-screen max-w-none -translate-x-1/2 overflow-hidden bg-[#090909] sm:h-[82svh] md:h-[min(88svh,900px)]"
       onMouseEnter={() => setIsPaused(true)}
